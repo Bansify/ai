@@ -1,3 +1,2 @@
-export { default as CodeEditor } from "./CodeEditor";
-export { default as EditorHeader } from "./EditorHeader";
-export { default as MediaViewer } from "./MediaViewer";
+export { default as CodeEditor } from '../../components/editor/CodeEditor';
+export { highlightCode } from '../../components/editor/SyntaxHighlighter';

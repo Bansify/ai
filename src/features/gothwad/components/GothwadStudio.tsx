@@ -3,7 +3,6 @@ import GothwadChatHeader from "./GothwadChatHeader";
 import LeftSidebar from "./LeftSidebar";
 import RightSidebar, { SUPPORTED_MODELS } from "./RightSidebar";
 import GothwadChatInput from "./GothwadChatInput";
-import GothwadChatScreen from "./GothwadChatScreen";
 import GothwadModel from "./GothwadModel";
 import { safeStorage } from "../../../utils/safeStorage";
 import { useGothwadStudioSessions } from "../hooks/useGothwadStudioSessions";
@@ -83,12 +82,9 @@ export default function GothwadStudio({ accentColor, customApiKey, onToggleSideb
           onToggleSidebar={onToggleSidebar}
         />
 
-        <GothwadChatScreen
-          activeSession={activeSession}
-          generating={generating}
-          accentColor={accentColor}
-          setInputText={handleUpdateInputText}
-        />
+        <div className="flex-1 overflow-y-auto p-4 text-sm text-zinc-400">
+          Chat v2 migration in progress.
+        </div>
 
         <GothwadChatInput
           inputText={inputText}

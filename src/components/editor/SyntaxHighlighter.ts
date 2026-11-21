@@ -1,4 +1,4 @@
-import hljs from "highlight.js";
+import Prism from "prismjs";
 
 export type SupportedLanguage = 
   | "typescript" 
@@ -191,9 +191,10 @@ export function highlightCode(code: string, language: SupportedLanguage): string
     highlighted = escapeHtml(code);
   } else {
     try {
-      highlighted = hljs.highlight(code, { language: hljsLang }).value;
+      const grammar = Prism.languages[hljsLang];
+      highlighted = grammar ? Prism.highlight(code, grammar, hljsLang) : escapeHtml(code);
     } catch (e) {
-      console.warn("[highlightCode] highlight.js failed:", e);
+      console.warn("[highlightCode] prismjs failed:", e);
       highlighted = escapeHtml(code);
     }
   }

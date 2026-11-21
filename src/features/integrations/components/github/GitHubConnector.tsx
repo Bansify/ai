@@ -1,6 +1,6 @@
 import React from "react";
 import { Github, ShieldCheck, Database, LayoutGrid, Terminal, MessageSquare, Code, Key, ExternalLink, Loader2 } from "lucide-react";
-import { supabaseService } from "../../../../services/supabase";
+// Supabase removed; GitHub OAuth will use Worker / Bansify Accounts
 
 interface GitHubConnectorProps {
   token: string | null;
@@ -25,8 +25,8 @@ export default function GitHubConnector({
   authConfig,
   isLoading = false
 }: GitHubConnectorProps) {
-  const isSbConfigured = supabaseService.isConfigured();
-  const sbUrl = supabaseService.getUrl();
+  const isSbConfigured = false;
+  const sbUrl = "";
 
   if (!token) {
     return (

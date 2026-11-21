@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Save, RefreshCw, ChevronDown, Check, FileCode } from "lucide-react";
 import { GrixFileNode } from "../../types/github";
-import { SupportedLanguage } from "./SyntaxHighlighter";
+import { SupportedLanguage } from "../../components/editor/SyntaxHighlighter";
 
 interface EditorHeaderProps {
   activeFile: GrixFileNode;

@@ -11,7 +11,7 @@ import {
   FileText
 } from "lucide-react";
 import { GrixFileNode } from "../../types/github";
-import { getMimeType } from "./SyntaxHighlighter";
+import { getMimeType } from "../../components/editor/SyntaxHighlighter";
 
 interface MediaViewerProps {
   activeFile: GrixFileNode;

@@ -1,6 +1,5 @@
 {
-  "name": "Gothwad Tech AI",
-  "description": "An advanced coding application integrated directly with GitHub.",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Bansify AI",
+  "description": "Bansify AI — Web & Android AI clients powered by a single Cloudflare Worker.",
+  "requestFramePermissions": []
 }

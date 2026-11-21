@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useGitHub } from "./hooks/useGitHub";
 import { useOAuth } from "./hooks/useOAuth";
-import { supabaseService } from "./services/supabase";
+// Supabase removed; Auth will use Bansify Accounts
+const supabaseService = {
+  isConfigured: () => false,
+  getClient: (): any => null,
+  signInWithGitHub: async () => {},
+};
 import { SidebarSection } from "./components/ActivityBar";
 import { GrixFileNode } from "./types/github";
 import { safeStorage } from "./utils/safeStorage";
@@ -704,16 +709,7 @@ export default function App() {
           <SplashScreen status={isCheckingSession ? "CHECKING ACTIVE SESSION..." : "INITIALIZING WORKSPACE..."} accentColor={accentColor} isDarkActive={isDarkActive} />
         ) : (!sbUser && !isGuestMode) ? (
           <LoginScreen
-            isLoading={isLoading}
-            error={error}
-            patInput={patInput}
-            onPatInputChange={setPatInput}
-            onPatSubmit={handlePatLoginSubmit}
-            onTriggerSupabaseOAuth={handleSupabaseLogin}
-            onTriggerOAuth={handleTriggerOAuth}
-            onContinueAsGuest={handleContinueAsGuest}
-            authConfig={authConfig}
-            accentColor={accentColor}
+            onGuestSuccess={() => handleContinueAsGuest()}
           />
         ) : activeMainOption === "settings" ? (
           <SettingsView

@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { GitHubUser, GitHubRepo } from "../types/github";
 import { github } from "../services/github";
-import { supabaseService } from "../services/supabase";
+// Supabase removed; GitHub OAuth will use Worker / Bansify Accounts
+const supabaseService = {
+  saveUserGitHubToken: async (_t: string) => {},
+  getUserGitHubToken: async (): Promise<string | null> => null,
+  getClient: (): any => null,
+};
 
 export function useGitHubAuth() {
   const [token, setTokenState] = useState<string | null>(github.getToken());
