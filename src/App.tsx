@@ -709,16 +709,7 @@ export default function App() {
           <SplashScreen status={isCheckingSession ? "CHECKING ACTIVE SESSION..." : "INITIALIZING WORKSPACE..."} accentColor={accentColor} isDarkActive={isDarkActive} />
         ) : (!sbUser && !isGuestMode) ? (
           <LoginScreen
-            isLoading={isLoading}
-            error={error}
-            patInput={patInput}
-            onPatInputChange={setPatInput}
-            onPatSubmit={handlePatLoginSubmit}
-            onTriggerSupabaseOAuth={handleSupabaseLogin}
-            onTriggerOAuth={handleTriggerOAuth}
-            onContinueAsGuest={handleContinueAsGuest}
-            authConfig={authConfig}
-            accentColor={accentColor}
+            onGuestSuccess={() => handleContinueAsGuest()}
           />
         ) : activeMainOption === "settings" ? (
           <SettingsView
