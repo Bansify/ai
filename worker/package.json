@@ -1,0 +1,19 @@
+{
+  "name": "bansify-ai-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "db:migrate:local": "wrangler d1 migrations apply bansify-ai-db --local"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "@types/node": "^26.6.6",
+    "typescript": "~5.8.2",
+    "wrangler": "^3.109.0"
+  }
+}

@@ -1,0 +1,22 @@
+name = "bansify-ai-worker"
+main = "src/index.ts"
+compatibility_date = "2025-02-14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bansify-ai-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "00000000000000000000000000000000"
+
+[vars]
+ENVIRONMENT = "development"
+# Secrets (set via `wrangler secret put <NAME>`, never in this file):
+# GEMINI_API_KEY
+# GROQ_API_KEY
+# OPENROUTER_API_KEY
+# BANSIFY_JWT_SECRET
+# ADMIN_SERVICE_TOKEN
