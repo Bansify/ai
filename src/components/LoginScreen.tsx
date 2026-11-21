@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Github, AlertCircle, Loader2, ShieldCheck, Mail, Lock, LogIn, UserPlus, Eye, EyeOff, User } from "lucide-react";
 import { motion } from "motion/react";
-import { supabaseService } from "../services/supabase";
+// Supabase removed; Auth will use Bansify Accounts
+const supabaseService = {
+  isConfigured: () => false,
+  signUpWithEmail: async (_e: string, _p: string) => {},
+  signInWithEmail: async (_e: string, _p: string) => {},
+  resetPassword: async (_e: string) => {},
+};
 
 interface LoginScreenProps {
   isLoading: boolean;

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useGitHub } from "./hooks/useGitHub";
 import { useOAuth } from "./hooks/useOAuth";
-import { supabaseService } from "./services/supabase";
+// Supabase removed; Auth will use Bansify Accounts
+const supabaseService = {
+  isConfigured: () => false,
+  getClient: (): any => null,
+  signInWithGitHub: async () => {},
+};
 import { SidebarSection } from "./components/ActivityBar";
 import { GrixFileNode } from "./types/github";
 import { safeStorage } from "./utils/safeStorage";
