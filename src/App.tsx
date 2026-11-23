@@ -12,8 +12,7 @@ import { GrixFileNode } from "./types/github";
 import { safeStorage } from "./utils/safeStorage";
 import { getAppModels, saveAppModels, AIModel } from "./utils/modelRegistry";
 
-import MobileLayout from "./components/MobileLayout";
-import DesktopLayout from "./components/DesktopLayout";
+import { BansifyShell, type ShellUser } from "./ui/BansifyShell";
 import LoginScreen from "./components/LoginScreen";
 import { fetchBansifySession, type BansifySession } from "./lib/bansifySession";
 import { openAccountMenu, preloadAccountMenu } from "./lib/accountMenu";
@@ -766,140 +765,14 @@ export default function App() {
             appModels={appModels}
             onUpdateAppModels={handleUpdateAppModels}
           />
-        ) : isMobile ? (
-          <MobileLayout
-            activeStudio={activeStudio}
-            isDarkActive={isDarkActive}
-            isLeftDrawerOpen={isLeftDrawerOpen}
-            setIsLeftDrawerOpen={setIsLeftDrawerOpen}
-            accentColor={accentColor}
-            selectedRepo={selectedRepo}
-            activeFile={activeFile}
-            token={token}
-            selectRepo={selectRepo}
-            logout={logout}
-            disconnectGitHub={disconnectGitHub}
-            onClearAppData={handleClearAppData}
-            sbUser={sbUser}
-            isMobile={isMobile}
-            mobileActiveTab={mobileActiveTab}
-            setMobileActiveTab={setMobileActiveTab}
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            user={user}
-            repos={repos}
-            branches={branches}
-            selectedBranch={selectedBranch}
-            fileSystemTree={fileSystemTree}
-            isLoading={isLoading}
-            error={error}
-            patInput={patInput}
-            onPatInputChange={setPatInput}
-            onPatSubmit={handlePatLoginSubmit}
-            onTriggerOAuth={handleTriggerOAuth}
-            onSelectRepo={handleSelectRepo}
-            onSelectBranch={selectBranch}
-            onToggleDir={toggleDirectoryExpand}
-            onSelectFile={handleSelectFile}
-            setActiveFile={setActiveFile}
-            loadDirectory={loadDirectory}
-            syncZipFiles={syncZipFiles}
-            refreshRepos={refreshRepos}
-            authConfig={authConfig}
-            uiScale={uiScale}
-            onUiScaleChange={handleUiScaleChange}
-            themeMode={themeMode}
-            onThemeModeChange={handleThemeModeChange}
-            onAccentColorChange={handleAccentColorChange}
-            fontFamily={fontFamily}
-            onFontFamilyChange={handleFontFamilyChange}
-            desktopMode={desktopMode}
-            onDesktopModeChange={handleDesktopModeChange}
-            openTabs={openTabs}
-            updateEditor={updateEditor}
-            saveFile={saveFile}
-            editorContent={editorContent}
-            handleSetActiveStudio={handleSetActiveStudio}
-            handleCloseTab={handleCloseTab}
-            chatSessions={chatSessions}
-            activeChatSessionId={activeChatSessionId}
-            onSetActiveChatSessionId={handleSetActiveChatSessionId}
-            onUpdateChatSessions={handleUpdateChatSessions}
-            customApiKey={customApiKey}
-            onSetCustomApiKey={handleSetCustomApiKey}
-            groqApiKey={groqApiKey}
-            onSetGroqApiKey={handleSetGroqApiKey}
-            appModels={appModels}
-            onUpdateAppModels={handleUpdateAppModels}
-            activeMainOption={activeMainOption}
-            setActiveMainOption={setActiveMainOption}
-          />
         ) : (
-          <DesktopLayout
-            activeStudio={activeStudio}
-            handleSetActiveStudio={handleSetActiveStudio}
-            activeMainOption={activeMainOption}
-            setActiveMainOption={setActiveMainOption}
-            accentColor={accentColor}
-            selectedRepo={selectedRepo}
-            activeFile={activeFile}
-            token={token}
-            logout={logout}
-            disconnectGitHub={disconnectGitHub}
-            onClearAppData={handleClearAppData}
-            sbUser={sbUser}
-            isMobile={isMobile}
-            activeSection={activeSection}
-            setActiveSection={setActiveSection}
-            user={user}
-            repos={repos}
-            branches={branches}
-            selectedBranch={selectedBranch}
-            fileSystemTree={fileSystemTree}
-            isLoading={isLoading}
-            error={error}
-            patInput={patInput}
-            onPatInputChange={setPatInput}
-            onPatSubmit={handlePatLoginSubmit}
-            onTriggerOAuth={handleTriggerOAuth}
-            onSelectRepo={handleSelectRepo}
-            onSelectBranch={selectBranch}
-            onToggleDir={toggleDirectoryExpand}
-            onSelectFile={handleSelectFile}
-            setActiveFile={setActiveFile}
-            loadDirectory={loadDirectory}
-            syncZipFiles={syncZipFiles}
-            refreshRepos={refreshRepos}
-            authConfig={authConfig}
-            uiScale={uiScale}
-            onUiScaleChange={handleUiScaleChange}
-            themeMode={themeMode}
-            onThemeModeChange={handleThemeModeChange}
-            onAccentColorChange={handleAccentColorChange}
-            fontFamily={fontFamily}
-            onFontFamilyChange={handleFontFamilyChange}
-            desktopMode={desktopMode}
-            onDesktopModeChange={handleDesktopModeChange}
-            previewOpen={previewOpen}
-            handleTogglePreview={handleTogglePreview}
-            setPreviewOpen={setPreviewOpen}
-            openTabs={openTabs}
-            handleCloseTab={handleCloseTab}
-            editorContent={editorContent}
-            updateEditor={updateEditor}
-            saveFile={saveFile}
-            aiPanelOpen={aiPanelOpen}
-            handleToggleAiPanel={handleToggleAiPanel}
-            chatSessions={chatSessions}
-            activeChatSessionId={activeChatSessionId}
-            onSetActiveChatSessionId={handleSetActiveChatSessionId}
-            onUpdateChatSessions={handleUpdateChatSessions}
-            customApiKey={customApiKey}
-            onSetCustomApiKey={handleSetCustomApiKey}
-            groqApiKey={groqApiKey}
-            onSetGroqApiKey={handleSetGroqApiKey}
-            appModels={appModels}
-            onUpdateAppModels={handleUpdateAppModels}
+          <BansifyShell
+            user={(bansifySession?.user as ShellUser | null) ?? (user as ShellUser | null)}
+            themeMode={isDarkActive ? 'dark' : 'light'}
+            onToggleTheme={() => handleThemeModeChange(isDarkActive ? 'light' : 'dark')}
+            onLogout={logout}
+            accountHref="https://accounts.bansify.com/account"
+            models={Array.isArray(appModels) ? appModels.map((m: any) => (typeof m === 'string' ? m : m?.id ?? m?.name)).filter(Boolean) : undefined}
           />
         )}
       </React.Suspense>
