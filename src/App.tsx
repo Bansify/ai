@@ -15,6 +15,8 @@ import { getAppModels, saveAppModels, AIModel } from "./utils/modelRegistry";
 import MobileLayout from "./components/MobileLayout";
 import DesktopLayout from "./components/DesktopLayout";
 import LoginScreen from "./components/LoginScreen";
+import { fetchBansifySession, type BansifySession } from "./lib/bansifySession";
+import { openAccountMenu, preloadAccountMenu } from "./lib/accountMenu";
 import SplashScreen from "./components/SplashScreen";
 import { SettingsView } from "./features/settings";
 
@@ -89,6 +91,7 @@ export default function App() {
   } = useGitHub();
 
   const [sbUser, setSbUser] = useState<any>(null);
+  const [bansifySession, setBansifySession] = useState<BansifySession | null>(null);
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
     return safeStorage.getItem("gothwad_guest_session") === "true";
   });
@@ -110,6 +113,19 @@ export default function App() {
     const startTime = Date.now();
 
     const checkSession = async () => {
+      try {
+        // Seamless Bansify sign-on: if the accounts cookie is live on .bansify.com we
+        // are already signed in, exactly like Gmail and Drive on their own domains.
+        const shared = await fetchBansifySession();
+        if (active && shared.authenticated) {
+          setBansifySession(shared);
+          setIsGuestMode(true);
+          safeStorage.setItem("gothwad_guest_session", "true");
+          preloadAccountMenu();
+        }
+      } catch (e) {
+        console.warn("Failed to read the Bansify session", e);
+      }
       try {
         const client = supabaseService.getClient();
         if (client) {
@@ -702,6 +718,26 @@ export default function App() {
       style={containerStyle}
       className="flex flex-col bg-zinc-950 text-zinc-300 selection:bg-zinc-850 select-none overflow-hidden font-sans relative"
     >
+      {bansifySession?.authenticated && !showSplash && (
+        <button
+          type="button"
+          onClick={(e) => openAccountMenu(bansifySession, e.currentTarget)}
+          title={bansifySession.user?.email || "Bansify account"}
+          aria-label="Bansify account"
+          className="absolute right-3 top-3 z-50 w-9 h-9 rounded-full overflow-hidden bg-[#0494f4] text-white flex items-center justify-center text-xs font-bold ring-1 ring-white/20"
+        >
+          {bansifySession.user?.avatarUrl || bansifySession.user?.avatar_url ? (
+            <img
+              src={(bansifySession.user.avatarUrl || bansifySession.user.avatar_url) as string}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            (bansifySession.user?.name || bansifySession.user?.username || "B").slice(0, 1).toUpperCase()
+          )}
+        </button>
+      )}
+
       <React.Suspense fallback={
         <SplashScreen status="INITIALIZING GOTHWAD WORKSPACE..." accentColor={accentColor} isDarkActive={isDarkActive} />
       }>
