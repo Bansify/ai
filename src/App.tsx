@@ -92,15 +92,12 @@ export default function App() {
 
   const [sbUser, setSbUser] = useState<any>(null);
   const [bansifySession, setBansifySession] = useState<BansifySession | null>(null);
-  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => {
-    return safeStorage.getItem("gothwad_guest_session") === "true";
-  });
+  // A Bansify account is required; the shared .bansify.com session is the only key.
   const [isCheckingSession, setIsCheckingSession] = useState<boolean>(true);
   const [showSplash, setShowSplash] = useState<boolean>(true);
 
-  const handleContinueAsGuest = () => {
-    setIsGuestMode(true);
-    safeStorage.setItem("gothwad_guest_session", "true");
+  /** After a successful Bansify sign-in, land on the last used workspace path. */
+  const handleSignedIn = () => {
     const savedOption = safeStorage.getItem("gothwad_active_main_option") || "gothwad_ai";
     const defaultPath = optionToPathMap[savedOption] || "/chat";
     if (window.location.pathname === "/" || window.location.pathname === "") {
@@ -119,8 +116,6 @@ export default function App() {
         const shared = await fetchBansifySession();
         if (active && shared.authenticated) {
           setBansifySession(shared);
-          setIsGuestMode(true);
-          safeStorage.setItem("gothwad_guest_session", "true");
           preloadAccountMenu();
         }
       } catch (e) {
@@ -249,7 +244,7 @@ export default function App() {
   useEffect(() => {
     if (isCheckingSession) return;
 
-    if (!sbUser && !isGuestMode) {
+    if (!bansifySession?.authenticated) {
       // Force URL back to root / if they are not logged in, no bypass allowed
       if (window.location.pathname !== "/") {
         window.history.replaceState(null, "", "/");
@@ -270,7 +265,7 @@ export default function App() {
     }
 
     const handlePopState = () => {
-      if (!sbUser && !isGuestMode) {
+      if (!bansifySession?.authenticated) {
         if (window.location.pathname !== "/") {
           window.history.replaceState(null, "", "/");
         }
@@ -310,7 +305,7 @@ export default function App() {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [isCheckingSession, sbUser, isGuestMode]);
+  }, [isCheckingSession, bansifySession]);
 
   const [chatSessions, setChatSessions] = useState<any[]>(() => {
     const saved = safeStorage.getItem("gothwad_studio_chat_sessions");
@@ -743,9 +738,9 @@ export default function App() {
       }>
         {showSplash ? (
           <SplashScreen status={isCheckingSession ? "CHECKING ACTIVE SESSION..." : "INITIALIZING WORKSPACE..."} accentColor={accentColor} isDarkActive={isDarkActive} />
-        ) : (!sbUser && !isGuestMode) ? (
+        ) : !bansifySession?.authenticated ? (
           <LoginScreen
-            onGuestSuccess={() => handleContinueAsGuest()}
+            onSuccess={handleSignedIn}
           />
         ) : activeMainOption === "settings" ? (
           <SettingsView

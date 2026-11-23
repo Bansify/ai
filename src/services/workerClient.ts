@@ -39,13 +39,6 @@ export async function fetchProviders(): Promise<WorkerProvider[]> {
   return data.providers ?? [];
 }
 
-export async function createGuestToken(): Promise<string> {
-  const res = await fetch(`${WORKER_BASE}/v1/guest`, { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to create guest session');
-  const data = (await res.json()) as { token: string };
-  return data.token;
-}
-
 export async function streamChat(params: {
   messages: ChatMsg[];
   model?: string;
