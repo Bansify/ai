@@ -17,14 +17,19 @@ export class ProviderError extends Error {
   }
 }
 
+/**
+ * Resolves a provider's key from its `key_env_name` column.
+ *
+ * Deliberately dynamic: adding a provider (Z.ai, SambaNova, Workers AI, ...) is
+ * one `providers` row plus one Worker secret, with no code change and no deploy
+ * of a new map. A row whose secret is missing simply fails this candidate and
+ * the scheduler moves to the next provider.
+ */
 function getApiKey(env: Env, keyEnvName: string): string | undefined {
-  const map: Record<string, string | undefined> = {
-    SARVAM_API_KEY: env.SARVAM_API_KEY,
-    GEMINI_API_KEY: env.GEMINI_API_KEY,
-    GROQ_API_KEY: env.GROQ_API_KEY,
-    OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
-  };
-  return map[keyEnvName];
+  const name = String(keyEnvName || '').trim();
+  if (!/^[A-Z][A-Z0-9_]{2,63}$/.test(name)) return undefined;
+  const value = (env as unknown as Record<string, unknown>)[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
 /**
