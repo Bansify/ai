@@ -19,11 +19,27 @@ export class ProviderError extends Error {
 
 function getApiKey(env: Env, keyEnvName: string): string | undefined {
   const map: Record<string, string | undefined> = {
+    SARVAM_API_KEY: env.SARVAM_API_KEY,
     GEMINI_API_KEY: env.GEMINI_API_KEY,
     GROQ_API_KEY: env.GROQ_API_KEY,
     OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
   };
   return map[keyEnvName];
+}
+
+/**
+ * Sarvam wants its key twice: as a bearer token AND in `api-subscription-key`.
+ * Every other provider is plain OpenAI-compatible (`Authorization: Bearer`).
+ */
+function providerHeaders(provider: ProviderRow, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  };
+  if (provider.id === 'sarvam') {
+    headers['api-subscription-key'] = apiKey;
+  }
+  return headers;
 }
 
 export async function openProviderStream(opts: StreamOptions): Promise<ReadableStream<Uint8Array>> {
@@ -93,10 +109,7 @@ async function streamOpenAICompatible(
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: providerHeaders(opts.provider, apiKey),
     body: JSON.stringify(body),
     signal,
   });
