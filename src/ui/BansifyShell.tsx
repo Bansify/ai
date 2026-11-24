@@ -18,6 +18,7 @@ import {
   Paperclip,
 } from 'lucide-react';
 import ChatV2 from '../features/chat/v2/ChatV2';
+import { ComingSoon } from './ComingSoon';
 
 export interface ShellUser {
   name?: string;
@@ -252,35 +253,39 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
           )}
 
           {section === 'history' && (
-            <Empty title="History" body="Every conversation you start is kept with your Bansify account. The list appears here." />
+            <ComingSoon
+              title="History"
+              body="Chat history is already saved with your Bansify account — the list view ships next release."
+              onBack={() => setSection('chat')}
+            />
           )}
           {section === 'models' && (
-            <div className="mx-auto max-w-3xl px-4 py-6">
-              <h2 className="text-lg font-bold">Models</h2>
-              <p className="mt-1 text-sm text-zinc-500">Pick a model per conversation, or leave it on Auto.</p>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(models && models.length > 0 ? models : ['Auto — best available']).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => { setModel(m.startsWith('Auto') ? undefined : m); setSection('chat'); }}
-                    className="rounded-2xl border border-zinc-200 dark:border-[#333333] p-4 text-left hover:border-[#0494f4]/40 transition"
-                  >
-                    <p className="text-[13px] font-semibold">{m}</p>
-                    <p className="mt-0.5 text-[12px] text-zinc-500">Use for the next conversation</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ComingSoon
+              title="Model catalog"
+              body="Sarvam aur OpenRouter ke saare models, limits ke saath — next release me. Abhi header ke dropdown se model chuno."
+              onBack={() => setSection('chat')}
+            />
           )}
           {section === 'studio' && (
-            <Empty title="Studio" body="Repositories and files live here. Connect a repository to browse and edit it with the assistant." />
+            <ComingSoon
+              title="Studio"
+              body="Repo browsing, file editing and previews ship next release."
+              onBack={() => setSection('chat')}
+            />
           )}
           {section === 'library' && (
-            <Empty title="Library" body="Generated images, documents and exports will collect here." />
+            <ComingSoon
+              title="Library"
+              body="Generated images, documents and exports ship next release."
+              onBack={() => setSection('chat')}
+            />
           )}
           {section === 'scheduled' && (
-            <Empty title="Scheduled" body="Prompts you schedule will run on their own and appear here." />
+            <ComingSoon
+              title="Scheduled"
+              body="Queued prompts that run on their own ship next release."
+              onBack={() => setSection('chat')}
+            />
           )}
           {section === 'settings' && (
             <div className="mx-auto max-w-2xl px-4 py-6 space-y-4">
@@ -298,18 +303,6 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
     </div>
   );
 };
-
-const Empty: React.FC<{ title: string; body: string }> = ({ title, body }) => (
-  <div className="h-full grid place-items-center px-6">
-    <div className="max-w-md text-center">
-      <div className="mx-auto w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0494f4] to-[#7c5cff] text-white grid place-items-center">
-        <Paperclip className="w-5 h-5" strokeWidth={1.75} />
-      </div>
-      <h2 className="mt-4 text-lg font-bold">{title}</h2>
-      <p className="mt-1 text-sm text-zinc-500">{body}</p>
-    </div>
-  </div>
-);
 
 const Row: React.FC<{ label: string; value: string; action: string; onClick: () => void; danger?: boolean }> = ({
   label,
