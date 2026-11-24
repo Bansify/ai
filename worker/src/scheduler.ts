@@ -18,6 +18,17 @@ export function getNextUtcReset(): string {
   return next.toISOString();
 }
 
+/**
+ * The providers a request may use, in the order it will try them.
+ *
+ * Two modes:
+ *  - **Auto** (no model requested): every provider with `auto_enabled = 1`, in
+ *    priority order. Sarvam is `auto_enabled = 0` on purpose — it is the paid
+ *    provider, so it only runs when the user picks it by name.
+ *  - **Explicit model**: only the providers that actually serve that model. A
+ *    user who picks `sarvam-105b` gets Sarvam, not "Sarvam-or-whatever-is-cheap";
+ *    a request for a model nobody serves falls back to the auto chain.
+ */
 export async function rankProviders(
   env: Env,
   requestedModelId?: string
@@ -64,10 +75,26 @@ export async function rankProviders(
     const pModels = modelsByProvider.get(p.id) ?? [];
     if (pModels.length === 0) continue;
 
-    const matched = requestedModelId
-      ? pModels.find((m) => m.id === requestedModelId || m.model_id === requestedModelId)
-      : undefined;
-    const chosenModel = matched ?? pModels[0];
+    if (requestedModelId) {
+      // Explicit choice: only the provider that owns this model may answer.
+      const matched = pModels.find((m) => m.id === requestedModelId || m.model_id === requestedModelId);
+      if (!matched) continue;
+      const chosenModel = matched;
+      const usedRatioExplicit = dailyLimit > 0 ? used / dailyLimit : 0;
+      candidates.push({
+        provider: p,
+        modelId: chosenModel.model_id,
+        remaining,
+        dailyLimit,
+        tier: usedRatioExplicit > 0.8 ? 0 : 1,
+      });
+      continue;
+    }
+
+    // Auto: paid providers stay out of the chain unless the operator enables them.
+    if (p.auto_enabled === 0) continue;
+
+    const chosenModel = pModels[0];
 
     const usedRatio = dailyLimit > 0 ? used / dailyLimit : 0;
     const tier = usedRatio > 0.8 ? 0 : 1;
@@ -79,6 +106,12 @@ export async function rankProviders(
       dailyLimit,
       tier,
     });
+  }
+
+  // A model id nobody serves (an old client, a renamed model) must not turn into
+  // "no provider available": fall back to the automatic chain instead.
+  if (requestedModelId && candidates.length === 0) {
+    return rankProviders(env);
   }
 
   return sortCandidates(candidates);

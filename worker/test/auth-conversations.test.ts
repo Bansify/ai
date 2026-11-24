@@ -376,3 +376,43 @@ test('the fallback chain follows priority, not whichever quota is biggest', asyn
     [120, 100, 50, 200]
   );
 });
+
+test('auto mode follows priority and never spends a manual-only provider', async () => {
+  const { rankProviders } = await import('../src/scheduler.ts');
+  const providers = [
+    { id: 'sarvam', name: 'Sarvam', base_url: 'x', key_env_name: 'SARVAM_API_KEY', free_tier_json: '{"daily_requests":100000}', priority: 120, status: 'healthy', last_checked: 0, auto_enabled: 0 },
+    { id: 'groq', name: 'Groq', base_url: 'x', key_env_name: 'GROQ_API_KEY', free_tier_json: '{"daily_requests":1000}', priority: 130, status: 'healthy', last_checked: 0, auto_enabled: 1 },
+    { id: 'zai', name: 'Z.ai', base_url: 'x', key_env_name: 'ZAI_API_KEY', free_tier_json: '{"daily_requests":500}', priority: 75, status: 'healthy', last_checked: 0, auto_enabled: 1 },
+  ];
+  const models = [
+    { id: 'sarvam-105b', provider_id: 'sarvam', model_id: 'sarvam-105b', display_name: 'Sarvam 105B', context_len: 131072, speed_class: 'fast', is_free: 0, enabled: 1 },
+    { id: 'groq-gpt-oss', provider_id: 'groq', model_id: 'openai/gpt-oss-120b', display_name: 'GPT-OSS 120B', context_len: 131072, speed_class: 'instant', is_free: 1, enabled: 1 },
+    { id: 'zai-glm', provider_id: 'zai', model_id: 'glm-4.7-flash', display_name: 'GLM 4.7 Flash', context_len: 131072, speed_class: 'fast', is_free: 1, enabled: 1 },
+  ];
+  const DB = {
+    prepare(sql: string) {
+      const api = {
+        bind() { return api; },
+        async all() {
+          if (sql.includes('FROM providers')) return { results: providers };
+          if (sql.includes('FROM models')) return { results: models };
+          return { results: [] };
+        },
+        async run() { return { meta: { changes: 0 } }; },
+      };
+      return api;
+    },
+  } as unknown as D1Database;
+  const CACHE = { async get() { return null; }, async put() {}, async delete() {} } as unknown as KVNamespace;
+  const env = { DB, CACHE } as unknown as Env;
+
+  const auto = await rankProviders(env);
+  assert.deepEqual(auto.map((c) => c.provider.id), ['groq', 'zai']);
+
+  const explicit = await rankProviders(env, 'sarvam-105b');
+  assert.deepEqual(explicit.map((c) => c.provider.id), ['sarvam']);
+  assert.equal(explicit[0].modelId, 'sarvam-105b');
+
+  const unknown = await rankProviders(env, 'not-a-model');
+  assert.deepEqual(unknown.map((c) => c.provider.id), ['groq', 'zai']);
+});
