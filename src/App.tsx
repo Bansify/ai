@@ -332,7 +332,7 @@ export default function App() {
         {
           id: "welcome",
           role: "assistant",
-          content: "Welcome to **Gothwad Tech AI Chat Workstation**!\n\nThis is a high-fidelity interactive chat sandbox styled like Google AI Studio. You can chat with advanced free or premium models, craft deep system instructions, configure inference parameters (temperature, token ceilings), and test complex prompt pipelines.\n\nType your query below to begin, or adjust the parameter console!",
+          content: "Welcome to **Bansify AI**!\n\nAsk anything in English, Hindi or Hinglish. Your Bansify Account keeps the chat history, so the same threads show up in the Android app.",
           timestamp: new Date()
         }
       ],
