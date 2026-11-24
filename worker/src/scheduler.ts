@@ -31,8 +31,10 @@ export async function rankProviders(
     'SELECT provider_id, requests FROM usage WHERE day = ?'
   ).bind(day).all<{ provider_id: string; requests: number }>();
 
+  // Ordered, because `pModels[0]` is the model a provider answers with when the
+  // caller did not pick one: biggest context first, free before paid, then name.
   const { results: models } = await env.DB.prepare(
-    'SELECT * FROM models WHERE enabled = 1'
+    'SELECT * FROM models WHERE enabled = 1 ORDER BY is_free DESC, context_len DESC, display_name ASC'
   ).all<ModelRow>();
 
   const usageMap = new Map((usageRows ?? []).map((u) => [u.provider_id, u.requests]));
