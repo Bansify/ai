@@ -21,6 +21,11 @@ export interface ProviderRow {
   priority: number;
   status: string;
   last_checked: number | null;
+  /**
+   * 1 = usable by the automatic fallback chain. Paid providers (Sarvam) are 0:
+   * they only run when the user picks that model by name.
+   */
+  auto_enabled?: number;
 }
 
 export interface ModelRow {
