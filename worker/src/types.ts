@@ -5,8 +5,11 @@ export interface Env {
   GEMINI_API_KEY?: string;
   GROQ_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
+  SARVAM_API_KEY?: string;
   BANSIFY_JWT_SECRET?: string;
   ADMIN_SERVICE_TOKEN?: string;
+  /** Server-to-server base for Bansify Accounts (no trailing slash), e.g. https://api.bansify.com */
+  ACCOUNTS_API_URL?: string;
 }
 
 export interface ProviderRow {
@@ -58,4 +61,39 @@ export interface ChatRequestBody {
   model?: string;
   persona?: UserPersona;
   style?: 'concise' | 'detailed' | 'hinglish';
+  /** When signed in, the server appends both turns to this conversation. */
+  conversation_id?: string;
+  /** Client-side conversation title hint (first user message) for a new conversation. */
+  conversation_title?: string;
+}
+
+/** A signed-in Bansify Accounts identity, resolved from an OAuth bearer token. */
+export interface AiUser {
+  /** Stable subject: Accounts `sub` when present, otherwise the username. */
+  id: string;
+  username: string;
+  email?: string;
+  name?: string;
+  clientId?: string;
+}
+
+export interface ConversationRow {
+  id: string;
+  user_id: string;
+  title: string;
+  model_id: string | null;
+  preview: string;
+  created_at: number;
+  updated_at: number;
+  archived: number;
+}
+
+export interface MessageRow {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  model_id: string | null;
+  provider_id: string | null;
+  created_at: number;
 }

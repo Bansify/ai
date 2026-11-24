@@ -1,14 +1,32 @@
-import type { ChatRequestBody, Env, ModelRow, ProviderRow } from './types.ts';
+import type { AiUser, ChatRequestBody, Env, ModelRow, ProviderRow } from './types.ts';
 import { buildSystemPrompt, trimMessages } from './prompt.ts';
 import { openProviderStream, ProviderError } from './providers.ts';
 import { getNextUtcReset, getUtcDay, markDegraded, rankProviders, recordUsage } from './scheduler.ts';
 import { checkRateLimit, createGuestToken, getCachedAnswer, setCachedAnswer, sha256Hex } from './cache.ts';
+import { resolveUser } from './auth.ts';
+import {
+  appendMessage,
+  cleanMessageText,
+  createConversation,
+  deleteAllConversations,
+  deleteConversation,
+  ensureConversation,
+  getConversation,
+  listConversations,
+  renameConversation,
+  titleFromFirstTurn,
+} from './conversations.ts';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Guest-Token, X-Admin-Token',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Guest-Token, X-Admin-Token, X-Gothwad-Authuser',
+  'Access-Control-Expose-Headers': 'x-cache, x-provider, x-model, x-conversation-id',
 };
+
+/** Signed-in daily cap per account; guests get the smaller IP-keyed cap. */
+const AUTHED_DAILY_LIMIT = 300;
+const GUEST_DAILY_LIMIT = 100;
 
 export function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
@@ -42,7 +60,93 @@ function isAdmin(request: Request, env: Env): boolean {
   return Boolean(env.ADMIN_SERVICE_TOKEN && token && token === env.ADMIN_SERVICE_TOKEN);
 }
 
-export async function handleRequest(request: Request, env: Env): Promise<Response> {
+function authRequired(): Response {
+  return jsonResponse(
+    { error: 'Bansify Account se sign in karo', code: 'auth_required' },
+    401
+  );
+}
+
+/**
+ * Conversation routes. Every one of them needs a verified bearer token: chat
+ * history belongs to an account, not to a device or an IP.
+ */
+async function handleConversations(
+  request: Request,
+  env: Env,
+  user: AiUser | null,
+  segments: string[]
+): Promise<Response> {
+  if (!user) return authRequired();
+
+  // /v1/conversations
+  if (segments.length === 0) {
+    if (request.method === 'GET') {
+      const conversations = await listConversations(env, user.id);
+      return jsonResponse({ conversations });
+    }
+    if (request.method === 'POST') {
+      const body = (await request.json().catch(() => null)) as
+        | { title?: unknown; model?: unknown }
+        | null;
+      const conversation = await createConversation(env, user.id, body?.title, body?.model);
+      return jsonResponse({ conversation }, 201);
+    }
+    if (request.method === 'DELETE') {
+      const removed = await deleteAllConversations(env, user.id);
+      return jsonResponse({ ok: true, removed });
+    }
+    return jsonResponse({ error: 'Method not allowed' }, 405);
+  }
+
+  const conversationId = segments[0];
+  if (!conversationId) return jsonResponse({ error: 'Not found' }, 404);
+
+  // /v1/conversations/:id
+  if (segments.length === 1) {
+    if (request.method === 'GET') {
+      const found = await getConversation(env, user.id, conversationId);
+      if (!found) return jsonResponse({ error: 'Conversation not found' }, 404);
+      return jsonResponse(found);
+    }
+    if (request.method === 'PATCH') {
+      const body = (await request.json().catch(() => null)) as { title?: unknown } | null;
+      const ok = await renameConversation(env, user.id, conversationId, body?.title);
+      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'Conversation not found' }, 404);
+    }
+    if (request.method === 'DELETE') {
+      const ok = await deleteConversation(env, user.id, conversationId);
+      return ok ? jsonResponse({ ok: true }) : jsonResponse({ error: 'Conversation not found' }, 404);
+    }
+    return jsonResponse({ error: 'Method not allowed' }, 405);
+  }
+
+  // /v1/conversations/:id/messages — clients that run their own streaming loop
+  if (segments.length === 2 && segments[1] === 'messages' && request.method === 'POST') {
+    const found = await getConversation(env, user.id, conversationId);
+    if (!found) return jsonResponse({ error: 'Conversation not found' }, 404);
+    const body = (await request.json().catch(() => null)) as
+      | { role?: unknown; content?: unknown; model?: unknown; provider?: unknown }
+      | null;
+    const role = body?.role === 'assistant' ? 'assistant' : body?.role === 'user' ? 'user' : null;
+    const content = cleanMessageText(body?.content);
+    if (!role || !content.trim()) return jsonResponse({ error: 'role and content are required' }, 400);
+    const message = await appendMessage(env, conversationId, role, content, {
+      modelId: typeof body?.model === 'string' ? body.model : null,
+      providerId: typeof body?.provider === 'string' ? body.provider : null,
+    });
+    if (role === 'user') await titleFromFirstTurn(env, found.conversation, content);
+    return jsonResponse({ message }, 201);
+  }
+
+  return jsonResponse({ error: 'Not found' }, 404);
+}
+
+export async function handleRequest(
+  request: Request,
+  env: Env,
+  ctx?: ExecutionContext
+): Promise<Response> {
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
@@ -94,21 +198,45 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     return jsonResponse({ token: createGuestToken(), expires_in: 86400 });
   }
 
+  // Who am I? The web app and the Android app both call this right after sign-in
+  // to prove the token works before they show the chat screen.
+  if (request.method === 'GET' && path === '/v1/me') {
+    const user = await resolveUser(request, env);
+    if (!user) return jsonResponse({ authenticated: false }, 401);
+    return jsonResponse({
+      authenticated: true,
+      user,
+      limits: { daily_requests: AUTHED_DAILY_LIMIT },
+      reset_at: getNextUtcReset(),
+    });
+  }
+
   if (request.method === 'POST' && path === '/v1/feedback') {
     const body = (await request.json().catch(() => null)) as { model_id?: string; message_hash?: string; vote?: number } | null;
     if (!body?.model_id || !body?.message_hash || (body.vote !== 1 && body.vote !== -1)) {
       return jsonResponse({ error: 'Invalid feedback payload' }, 400);
     }
+    const user = await resolveUser(request, env);
     const id = crypto.randomUUID();
     await env.DB.prepare(
       'INSERT INTO feedback (id, user_id, model_id, message_hash, vote, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(id, 'anon', body.model_id, body.message_hash, body.vote, Date.now()).run();
+    ).bind(id, user?.id ?? 'anon', body.model_id, body.message_hash, body.vote, Date.now()).run();
     return jsonResponse({ ok: true, id });
   }
 
+  // ---- Conversations (synced chat history across web + Android) -------------
+  if (path === '/v1/conversations' || path.startsWith('/v1/conversations/')) {
+    const user = await resolveUser(request, env);
+    const segments = path.replace('/v1/conversations', '').split('/').filter(Boolean);
+    return handleConversations(request, env, user, segments);
+  }
+
   if (request.method === 'POST' && path === '/v1/chat') {
+    const user = await resolveUser(request, env);
     const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-    const rl = await checkRateLimit(env, `chat:${ip}:${getUtcDay()}`, 100);
+    const limitKey = user ? `chat:user:${user.id}:${getUtcDay()}` : `chat:${ip}:${getUtcDay()}`;
+    const limit = user ? AUTHED_DAILY_LIMIT : GUEST_DAILY_LIMIT;
+    const rl = await checkRateLimit(env, limitKey, limit);
     if (!rl.allowed) {
       return jsonResponse({ error: 'Abhi free quota khatam hai, kal reset hoga', reset_at: getNextUtcReset() }, 429);
     }
@@ -123,9 +251,39 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const hasImage = body.messages.some((m) => Boolean(m.hasImage));
     const qHash = await sha256Hex(JSON.stringify({ systemPrompt, trimmed, model: body.model ?? 'auto' }));
 
+    // Persist the turn first, so a dropped stream still leaves the question saved.
+    let conversationId: string | undefined;
+    const lastUserMessage = [...body.messages].reverse().find((m) => m.role === 'user');
+    if (user && body.conversation_id) {
+      const conversation = await ensureConversation(
+        env,
+        user.id,
+        body.conversation_id,
+        body.conversation_title ?? lastUserMessage?.content,
+        body.model
+      );
+      conversationId = conversation.id;
+      if (lastUserMessage?.content) {
+        await appendMessage(env, conversation.id, 'user', lastUserMessage.content, { modelId: body.model ?? null });
+        await titleFromFirstTurn(env, conversation, lastUserMessage.content);
+      }
+    }
+
+    const conversationHeaders: Record<string, string> = conversationId
+      ? { 'x-conversation-id': conversationId }
+      : {};
+
     if (!hasImage) {
       const cached = await getCachedAnswer(env, qHash);
-      if (cached) return sseFromText(cached, true);
+      if (cached) {
+        if (conversationId) {
+          const saved = appendMessage(env, conversationId, 'assistant', cached, { modelId: body.model ?? null });
+          if (ctx) ctx.waitUntil(saved); else await saved;
+        }
+        const response = sseFromText(cached, true);
+        if (conversationId) response.headers.set('x-conversation-id', conversationId);
+        return response;
+      }
     }
 
     const candidates = await rankProviders(env, body.model);
@@ -139,6 +297,13 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           env,
           onComplete: (fullText) => {
             if (!hasImage) void setCachedAnswer(env, qHash, fullText);
+            if (conversationId && fullText.trim()) {
+              const saved = appendMessage(env, conversationId, 'assistant', fullText, {
+                modelId: candidate.modelId,
+                providerId: candidate.provider.id,
+              });
+              if (ctx) ctx.waitUntil(saved);
+            }
           },
         });
         await recordUsage(env, candidate.provider.id);
@@ -149,6 +314,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
             'Cache-Control': 'no-cache',
             'x-provider': candidate.provider.id,
             'x-model': candidate.modelId,
+            ...conversationHeaders,
             ...CORS_HEADERS,
           },
         });
@@ -192,7 +358,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 }
 
 export default {
-  fetch(request: Request, env: Env): Promise<Response> {
-    return handleRequest(request, env);
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return handleRequest(request, env, ctx);
   },
 };
