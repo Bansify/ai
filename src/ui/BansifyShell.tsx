@@ -19,7 +19,6 @@ import {
 import ChatV2 from '../features/chat/v2/ChatV2';
 import { ComingSoon } from './ComingSoon';
 import { fetchModels, type WorkerModel } from '../services/workerClient';
-import { loadAccountWidget, preloadAccountWidget } from '../services/accountWidget';
 import { APP_DOCK } from '../data/dock';
 import { SOCIAL_LINKS } from '../data/social';
 
@@ -69,8 +68,6 @@ const NAV: Array<{ id: Section; label: string; icon: React.ComponentType<{ class
   { id: 'library', label: 'Library', icon: Library },
   { id: 'scheduled', label: 'Scheduled', icon: CalendarClock },
 ];
-
-const ACCOUNTS_ORIGIN = 'https://accounts.bansify.com';
 
 const SUGGESTIONS = [
   { title: 'Explain a codebase', body: 'Paste a repo and ask how the pieces fit together.', prompt: 'Explain the structure of this project and where the main entry points are.' },
@@ -133,12 +130,6 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
     return Array.from(byProvider.entries());
   }, [catalog]);
 
-  // The shared account sheet is published by Accounts; load it quietly so tapping the
-  // avatar opens instantly, exactly like Mail.
-  useEffect(() => {
-    preloadAccountWidget(ACCOUNTS_ORIGIN);
-  }, []);
-
   // The rest of the app lets the user pick an accent, which paints gradients and glows the
   // website does not have. Inside the shell the palette is fixed to the brand blue, so AI
   // looks like Mail and bansify.com; the choice is restored on the way out.
@@ -153,12 +144,6 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
       if (prevGradient) root.style.setProperty('--primary-gradient', prevGradient);
     };
   }, []);
-
-  const openAccountSheet = async () => {
-    const widget = await loadAccountWidget(ACCOUNTS_ORIGIN);
-    if (widget?.open) widget.open();
-    else window.location.href = accountHref;
-  };
 
   const isDark = themeMode === 'dark';
   const displayName = user?.name || user?.username || 'Bansify user';
@@ -313,7 +298,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
 
           <button
             type="button"
-            onClick={openAccountSheet}
+            onClick={() => { window.location.href = accountHref; }}
             title={user?.email}
             className={`w-full flex items-center gap-2.5 py-3 hover:bg-zinc-50 dark:hover:bg-[#333333] text-left cursor-pointer ${
               isOpen ? 'px-3' : 'justify-center px-0'
@@ -563,7 +548,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
         >
           <button
             type="button"
-            onClick={openAccountSheet}
+            onClick={() => { window.location.href = accountHref; }}
             title={user?.email}
             aria-label="Account"
             className="mb-1 w-9 h-9 rounded-full overflow-hidden bg-[#0494f4] text-white flex items-center justify-center text-xs font-bold cursor-pointer"
