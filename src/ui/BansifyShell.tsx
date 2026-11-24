@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   MessageSquare,
   History,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import ChatV2 from '../features/chat/v2/ChatV2';
 import { ComingSoon } from './ComingSoon';
+import { fetchModels, type WorkerModel } from '../services/workerClient';
 
 export interface ShellUser {
   name?: string;
@@ -38,6 +39,18 @@ interface BansifyShellProps {
   models?: string[];
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  groq: 'Groq (free)',
+  gemini: 'Google Gemini (free)',
+  'cloudflare-ai': 'Cloudflare Workers AI (free)',
+  zai: 'Z.ai GLM (free)',
+  openrouter: 'OpenRouter (free)',
+  sambanova: 'SambaNova (free)',
+  sarvam: 'Sarvam AI (paid — best quality)',
+};
+
+const providerLabel = (id: string): string => PROVIDER_LABELS[id] ?? id;
+
 const NAV: Array<{ id: Section; label: string; icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }> = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'history', label: 'History', icon: History },
@@ -55,10 +68,38 @@ const SUGGESTIONS = [
 ];
 
 /** Clean chat-first workspace: sidebar, suggestion cards, soft gradients, brand blue. */
-export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref, models }) => {
+export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref }) => {
   const [section, setSection] = useState<Section>('chat');
   const [collapsed, setCollapsed] = useState(false);
   const [model, setModel] = useState<string | undefined>(undefined);
+  // The picker is the worker's own catalog, so "provider switching" is real:
+  // each group is a provider, each option a model that provider actually serves.
+  const [catalog, setCatalog] = useState<WorkerModel[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await fetchModels();
+        if (!cancelled) setCatalog(list);
+      } catch {
+        // Offline or signed out: leave the picker on Auto.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const modelGroups = useMemo(() => {
+    const byProvider = new Map<string, WorkerModel[]>();
+    for (const m of catalog) {
+      const list = byProvider.get(m.provider_id) ?? [];
+      list.push(m);
+      byProvider.set(m.provider_id, list);
+    }
+    return Array.from(byProvider.entries());
+  }, [catalog]);
   const [query, setQuery] = useState('');
   const isDark = themeMode === 'dark';
 
@@ -205,15 +246,24 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <header className="flex items-center gap-2 h-14 px-4 sm:px-6 shrink-0 border-b border-zinc-200 dark:border-[#333333]">
           <span className="text-[13px] font-semibold">{title}</span>
-          {models && models.length > 0 && section === 'chat' && (
+          {section === 'chat' && (
             <select
               value={model ?? ''}
               onChange={(e) => setModel(e.target.value || undefined)}
-              className="ml-2 h-8 rounded-lg bg-transparent border border-zinc-200 dark:border-[#333333] text-[12px] px-2 outline-none"
+              aria-label="Model and provider"
+              title="Auto = free providers in order. Pick a model to force its provider."
+              className="ml-2 h-8 max-w-[220px] rounded-lg bg-transparent border border-zinc-200 dark:border-[#333333] text-[12px] px-2 outline-none"
             >
-              <option value="">Auto model</option>
-              {models.map((m) => (
-                <option key={m} value={m}>{m}</option>
+              <option value="">Auto — best free</option>
+              {modelGroups.map(([providerId, list]) => (
+                <optgroup key={providerId} label={providerLabel(providerId)}>
+                  {list.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.display_name}
+                      {m.is_free ? '' : ' · paid'}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           )}
