@@ -285,3 +285,15 @@ test('Sarvam is called with both auth headers and streams OpenAI-shaped deltas',
     globalThis.fetch = original;
   }
 });
+
+test('the /api route prefix is stripped, so ai.bansify.com/api/v1/* hits the same routes', async () => {
+  const { env } = createMockEnv();
+  const res = await handleRequest(new Request('https://ai.bansify.com/api/v1/health'), env);
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { ok: boolean };
+  assert.equal(body.ok, true);
+
+  // A lookalike prefix must NOT be treated as the API root.
+  const other = await handleRequest(new Request('https://ai.bansify.com/apix/v1/health'), env);
+  assert.equal(other.status, 404);
+});

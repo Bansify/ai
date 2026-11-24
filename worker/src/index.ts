@@ -28,6 +28,16 @@ const CORS_HEADERS: Record<string, string> = {
 const AUTHED_DAILY_LIMIT = 300;
 const GUEST_DAILY_LIMIT = 100;
 
+/**
+ * `/api/v1/health` and `/v1/health` both become `/v1/health`.
+ * Anything else is left exactly as it arrived.
+ */
+export function normalizePath(pathname: string): string {
+  if (pathname === '/api') return '/';
+  if (pathname.startsWith('/api/')) return pathname.slice(4);
+  return pathname;
+}
+
 export function jsonResponse(data: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -152,7 +162,11 @@ export async function handleRequest(
   }
 
   const url = new URL(request.url);
-  const path = url.pathname;
+  // The production route is `ai.bansify.com/api/*`, so the Worker sees
+  // `/api/v1/chat`. Strip that one prefix (and nothing else) so the same build
+  // also answers a direct `*.workers.dev/v1/chat` call, and so `..` tricks
+  // cannot reach a different path.
+  const path = normalizePath(url.pathname);
 
   if (request.method === 'GET' && path === '/v1/health') {
     const { results } = await env.DB.prepare(
