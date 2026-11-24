@@ -297,3 +297,30 @@ test('the /api route prefix is stripped, so ai.bansify.com/api/v1/* hits the sam
   const other = await handleRequest(new Request('https://ai.bansify.com/apix/v1/health'), env);
   assert.equal(other.status, 404);
 });
+
+test('the website signs in with the .bansify.com session cookie (no bearer token)', async () => {
+  const { env } = createMockEnv();
+  const original = globalThis.fetch;
+  let seenUrl = '';
+  globalThis.fetch = (async (url: string) => {
+    seenUrl = String(url);
+    return new Response(
+      JSON.stringify({ authenticated: true, user: { id: 'user_web', username: 'pawan', email: 'pawan@bansify.com' } }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  }) as typeof fetch;
+  try {
+    const res = await handleRequest(
+      new Request('https://ai.bansify.com/api/v1/me', {
+        headers: { cookie: 'gothwad_session=abc123' },
+      }),
+      env
+    );
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as { authenticated: boolean; user: { username: string } };
+    assert.equal(body.user.username, 'pawan');
+    assert.ok(seenUrl.endsWith('/api/auth/me'), `expected /api/auth/me, got ${seenUrl}`);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
