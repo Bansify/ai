@@ -249,14 +249,14 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
           </button>
         </div>
 
-        <div className={`flex-1 min-h-0 overflow-y-auto ${isOpen ? 'px-3' : 'px-0 flex flex-col items-center'}`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 ${isOpen ? 'px-3' : 'px-0 items-center'}`}>
           {NAV.map((item) => row(item, isOpen))}
           <button
             type="button"
             onClick={() => setSection('settings')}
             title="Settings"
             aria-label="Settings"
-            className={`group relative mt-1 flex items-center h-10 rounded-xl cursor-pointer text-zinc-900 dark:text-zinc-100 ${
+            className={`group relative flex items-center h-10 rounded-xl cursor-pointer text-zinc-900 dark:text-zinc-100 ${
               isOpen ? 'w-full' : 'w-10'
             }`}
           >
