@@ -103,7 +103,7 @@ async function streamOpenAICompatible(
   signal: AbortSignal
 ): Promise<ReadableStream<Uint8Array>> {
   const url = `${opts.provider.base_url}/chat/completions`;
-  const body = {
+  const body: Record<string, unknown> = {
     model: opts.modelId,
     stream: true,
     messages: [
@@ -111,6 +111,14 @@ async function streamOpenAICompatible(
       ...opts.messages,
     ],
   };
+
+  // sarvam-105b reasons before it answers by default: the stream then carries
+  // `reasoning_content` and `content` stays null, so a chat would sit blank and
+  // then dump the whole answer at once. `reasoning_effort: null` turns thinking
+  // off (a level like "low" does not) and content streams token by token.
+  if (opts.provider.id === 'sarvam') {
+    body.reasoning_effort = null;
+  }
 
   const res = await fetch(url, {
     method: 'POST',
