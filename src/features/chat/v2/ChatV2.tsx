@@ -10,6 +10,8 @@ import {
 interface UiMessage extends ChatMsg {
   id: string;
   cached?: boolean;
+  /** Which provider actually answered — visible so switching is not a guess. */
+  via?: string;
 }
 
 export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
@@ -77,9 +79,14 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
           if (meta.conversationId && meta.conversationId !== conversationId) {
             setConversationId(meta.conversationId);
           }
-          if (meta.cached) {
-            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, cached: true } : m)));
-          }
+          const via = [meta.provider, meta.model].filter(Boolean).join(' · ');
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId
+                ? { ...m, cached: meta.cached, via: via || m.via }
+                : m
+            )
+          );
         },
         onDelta: (delta) => {
           setMessages((prev) =>
@@ -150,9 +157,14 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
           ) : (
             <div key={m.id} className="w-full text-[16px] leading-[1.5] whitespace-pre-wrap">
               {m.content || (streaming ? '...' : '')}
-              {m.cached && (
-                <span className="ml-2 inline-block text-[11px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                  cached
+              {(m.via || m.cached) && (
+                <span className="mt-2 flex items-center gap-2 text-[11px] text-zinc-400">
+                  {m.via && <span>{m.via}</span>}
+                  {m.cached && (
+                    <span className="inline-block px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                      cached
+                    </span>
+                  )}
                 </span>
               )}
             </div>
