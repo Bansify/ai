@@ -324,3 +324,55 @@ test('the website signs in with the .bansify.com session cookie (no bearer token
     globalThis.fetch = original;
   }
 });
+
+test('a new provider works from its DB row alone (no hard-coded key map)', async () => {
+  const original = globalThis.fetch;
+  let seen: { url: string; auth?: string } | null = null;
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    const headers = (init.headers ?? {}) as Record<string, string>;
+    seen = { url: String(url), auth: headers.Authorization };
+    return new Response('data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
+  }) as typeof fetch;
+
+  try {
+    await openProviderStream({
+      provider: {
+        id: 'zai',
+        name: 'Z.ai',
+        base_url: 'https://api.z.ai/api/paas/v4',
+        key_env_name: 'ZAI_API_KEY',
+        free_tier_json: '{"daily_requests":500}',
+        priority: 70,
+        status: 'healthy',
+        last_checked: 0,
+      },
+      modelId: 'glm-4.7-flash',
+      systemPrompt: 'You are Bansify AI.',
+      messages: [{ role: 'user', content: 'Hi' }],
+      env: { ZAI_API_KEY: 'zai_test' } as unknown as Env,
+    });
+    assert.ok(seen, 'fetch was called');
+    const captured = seen as { url: string; auth?: string };
+    assert.equal(captured.url, 'https://api.z.ai/api/paas/v4/chat/completions');
+    assert.equal(captured.auth, 'Bearer zai_test');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('the fallback chain follows priority, not whichever quota is biggest', async () => {
+  const { sortCandidates } = await import('../src/scheduler.ts');
+  const chain = sortCandidates([
+    { provider: { priority: 50 }, remaining: 900000, tier: 1 },   // openrouter, huge quota
+    { provider: { priority: 120 }, remaining: 99000, tier: 1 },   // sarvam
+    { provider: { priority: 100 }, remaining: 500, tier: 1 },     // groq
+    { provider: { priority: 200 }, remaining: 5, tier: 0 },       // nearly exhausted: always last
+  ]);
+  assert.deepEqual(
+    chain.map((c) => c.provider.priority),
+    [120, 100, 50, 200]
+  );
+});

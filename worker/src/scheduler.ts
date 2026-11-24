@@ -79,13 +79,27 @@ export async function rankProviders(
     });
   }
 
-  candidates.sort((a, b) => {
-    if (b.tier !== a.tier) return b.tier - a.tier;
-    if (b.remaining !== a.remaining) return b.remaining - a.remaining;
-    return b.provider.priority - a.provider.priority;
-  });
+  return sortCandidates(candidates);
+}
 
-  return candidates;
+/**
+ * The fallback chain, in the order a request walks it.
+ *
+ * 1. `tier`   — a provider past 80% of its daily budget drops behind healthy ones.
+ * 2. priority — the operator's own ranking (Sarvam first, then the free tiers in
+ *               the order they want them tried). This is what makes the chain
+ *               predictable: before, a provider with a huge free quota always won
+ *               and priority only broke ties.
+ * 3. remaining — the same priority twice: spend the one with more left.
+ */
+export function sortCandidates<T extends { provider: { priority: number }; remaining: number; tier: number }>(
+  candidates: T[]
+): T[] {
+  return [...candidates].sort((a, b) => {
+    if (b.tier !== a.tier) return b.tier - a.tier;
+    if (b.provider.priority !== a.provider.priority) return b.provider.priority - a.provider.priority;
+    return b.remaining - a.remaining;
+  });
 }
 
 export async function markDegraded(env: Env, providerId: string): Promise<void> {
