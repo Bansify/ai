@@ -4,6 +4,7 @@ import { openProviderStream, ProviderError } from './providers.ts';
 import { getNextUtcReset, getUtcDay, markDegraded, rankProviders, recordUsage } from './scheduler.ts';
 import { checkRateLimit, createGuestToken, getCachedAnswer, setCachedAnswer, sha256Hex } from './cache.ts';
 import { resolveUser } from './auth.ts';
+import { probeProvider } from './diag.ts';
 import {
   appendMessage,
   cleanMessageText,
@@ -343,6 +344,99 @@ export async function handleRequest(
       { error: 'Abhi free quota khatam hai, kal reset hoga', reset_at: getNextUtcReset() },
       503
     );
+  }
+
+  // Provider diagnostics: one tiny request per provider, so a dead key or a
+  // retired model id is visible before a user hits it.
+  if (request.method === 'GET' && path === '/v1/diag') {
+    // Public like /v1/health, but it does spend one tiny request per provider,
+    // so an anonymous caller gets one run a minute and a hard daily cap.
+    if (!isAdmin(request, env)) {
+      const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+      const perIp = await checkRateLimit(env, `diag:${ip}:${Math.floor(Date.now() / 60000)}`, 1, 60);
+      const daily = await checkRateLimit(env, `diag:total:${getUtcDay()}`, 300);
+      if (!perIp.allowed || !daily.allowed) {
+        return jsonResponse({ error: 'Too many diagnostic runs, try again in a minute' }, 429);
+      }
+    }
+
+    const { results: providers } = await env.DB.prepare(
+      'SELECT * FROM providers ORDER BY priority DESC'
+    ).all<ProviderRow>();
+    const { results: models } = await env.DB.prepare(
+      'SELECT * FROM models WHERE enabled = 1 ORDER BY is_free DESC, context_len DESC, display_name ASC'
+    ).all<ModelRow>();
+    const firstModel = new Map<string, string>();
+    for (const m of models ?? []) {
+      if (!firstModel.has(m.provider_id)) firstModel.set(m.provider_id, m.model_id);
+    }
+
+    const probes = await Promise.all(
+      (providers ?? [])
+        .filter((p) => firstModel.has(p.id))
+        .map((p) => probeProvider(env, p, firstModel.get(p.id) as string))
+    );
+    // `?chat=1` also runs one real turn through the normal fallback path, so the
+    // streaming pipeline itself is covered and not just the keys.
+    let smoke: Record<string, unknown> | undefined;
+    if (url.searchParams.get('chat') === '1') {
+      const started = Date.now();
+      const candidates = await rankProviders(env);
+      const first = candidates[0];
+      if (!first) {
+        smoke = { ok: false, error: 'No provider available' };
+      } else {
+        try {
+          const stream = await openProviderStream({
+            provider: first.provider,
+            modelId: first.modelId,
+            systemPrompt: 'Reply with exactly: pong',
+            messages: [{ role: 'user', content: 'ping' }],
+            env,
+          });
+          const reader = stream.getReader();
+          const decoder = new TextDecoder();
+          let raw = '';
+          while (raw.length < 4000) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            raw += decoder.decode(value, { stream: true });
+          }
+          const text = raw
+            .split('\n')
+            .filter((line) => line.startsWith('data:'))
+            .map((line) => line.slice(5).trim())
+            .filter((data) => data && data !== '[DONE]')
+            .map((data) => {
+              try { return (JSON.parse(data) as { delta?: string }).delta ?? ''; } catch { return ''; }
+            })
+            .join('');
+          smoke = {
+            ok: text.trim().length > 0,
+            provider: first.provider.id,
+            model: first.modelId,
+            ms: Date.now() - started,
+            text: text.slice(0, 200),
+          };
+        } catch (err) {
+          smoke = {
+            ok: false,
+            provider: first.provider.id,
+            model: first.modelId,
+            ms: Date.now() - started,
+            error: err instanceof Error ? err.message : String(err),
+          };
+        }
+      }
+    }
+
+    return jsonResponse({
+      checked_at: new Date().toISOString(),
+      ok: probes.filter((p) => p.ok).length,
+      total: probes.length,
+      probes,
+      ...(smoke ? { smoke } : {}),
+    });
   }
 
   // Admin routes
