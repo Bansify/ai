@@ -3,7 +3,7 @@ import { buildSystemPrompt, trimMessages } from './prompt.ts';
 import { openProviderStream, ProviderError } from './providers.ts';
 import { getNextUtcReset, getUtcDay, markDegraded, rankProviders, recordUsage } from './scheduler.ts';
 import { checkRateLimit, createGuestToken, getCachedAnswer, setCachedAnswer, sha256Hex } from './cache.ts';
-import { resolveUser } from './auth.ts';
+import { resolveUser, takeRotatedCookies } from './auth.ts';
 import { probeProvider } from './diag.ts';
 import {
   appendMessage,
@@ -466,7 +466,14 @@ export async function handleRequest(
 }
 
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    return handleRequest(request, env, ctx);
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const response = await handleRequest(request, env, ctx);
+    const rotated = takeRotatedCookies(request);
+    if (rotated.length === 0) return response;
+
+    // One place, so every route forwards a rotated session cookie.
+    const copy = new Response(response.body, response);
+    for (const value of rotated) copy.headers.append('Set-Cookie', value);
+    return copy;
   },
 };

@@ -96,6 +96,7 @@ async function resolveBearer(token: string, env: Env): Promise<AiUser | null> {
   }
   if (!res.ok) return null;
 
+
   const body = (await res.json().catch(() => null)) as OAuthUserInfoBody | null;
   if (!body || typeof body !== 'object') return null;
 
@@ -123,6 +124,22 @@ async function resolveBearer(token: string, env: Env): Promise<AiUser | null> {
  * it. A second tab signed into another account passes `X-Gothwad-Authuser`, and
  * that selector is forwarded unchanged, exactly like Mail does.
  */
+/**
+ * Rotated session cookies that Accounts returned while we resolved the caller. Keyed by
+ * the request object, so the top-level handler can append them to the outgoing response:
+ * the session lives on .bansify.com, and dropping a rotation would sign the user out.
+ */
+const rotatedCookies = new WeakMap<Request, string[]>();
+
+const SESSION_COOKIE = /^(?:gothwad|bansify)_[a-z0-9_]+=/i;
+
+/** The Set-Cookie values collected for this request, if any. */
+export function takeRotatedCookies(request: Request): string[] {
+  const list = rotatedCookies.get(request);
+  rotatedCookies.delete(request);
+  return list ?? [];
+}
+
 async function resolveCookie(request: Request, env: Env): Promise<AiUser | null> {
   const cookie = request.headers.get('cookie');
   if (!cookie) return null;
@@ -142,6 +159,13 @@ async function resolveCookie(request: Request, env: Env): Promise<AiUser | null>
     return null;
   }
   if (!res.ok) return null;
+
+  // Accounts rotates the session cookie on some responses; pass it on or the browser keeps
+  // a cookie the server no longer accepts.
+  const headersWithCookies = res.headers as Headers & { getSetCookie?: () => string[] };
+  const setCookies = typeof headersWithCookies.getSetCookie === 'function' ? headersWithCookies.getSetCookie() : [];
+  const rotated = setCookies.filter((value: string) => SESSION_COOKIE.test(value));
+  if (rotated.length > 0) rotatedCookies.set(request, rotated);
 
   const body = (await res.json().catch(() => null)) as SessionMeBody | null;
   if (!body || body.authenticated !== true || !body.user) return null;

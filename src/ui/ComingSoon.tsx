@@ -30,7 +30,7 @@ export const ComingSoon: React.FC<{ title: string; body: string; onBack?: () => 
         className="mt-6 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
         style={{ backgroundColor: '#0494f4' }}
       >
-        Chat pe wapas jao
+        Back to Chat
       </button>
     )}
   </div>
