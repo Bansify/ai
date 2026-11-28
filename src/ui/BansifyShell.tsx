@@ -7,6 +7,7 @@ import { SOCIAL_LINKS } from '../data/social';
 import PanelCard from './shell/PanelCard';
 import { DockCards } from './shell/DockCards';
 import AccountSheet from '../components/AccountSheet';
+import AccountAvatarButton from '../components/AccountAvatarButton';
 import type { BansifySession } from '../lib/bansifySession';
 import HistoryView from './views/HistoryView';
 import ModelsView from './views/ModelsView';
@@ -181,16 +182,19 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
         )}
 
         <div className="flex flex-1 min-w-0 flex-col gap-3">
-          <div className="flex gap-3 shrink-0">
-            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
-              <button
-                type="button"
-                onClick={() => setMobileNav(true)}
-                aria-label="Open navigation"
-                className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-zinc-500 cursor-pointer shrink-0"
-              >
-                <Menu className="w-5 h-5" strokeWidth={1.75} />
-              </button>
+          {/* Phones: menu on the left OUTSIDE the pill, search in the middle, the
+              profile avatar on the right — exactly Mail's mobile header. */}
+          <div className="flex md:hidden items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileNav(true)}
+              aria-label="Open navigation"
+              className="w-10 h-10 shrink-0 rounded-full border border-zinc-200 bg-white flex items-center justify-center text-zinc-600 dark:border-[#333333] dark:bg-[#2a2a2a] dark:text-zinc-300 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" strokeWidth={1.75} />
+            </button>
+
+            <div className="flex-1 min-w-0 flex items-center gap-2 h-10 px-3 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
               <Search className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.75} />
               <input
                 value={query}
@@ -203,6 +207,45 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
                   <X className="w-4 h-4" strokeWidth={1.75} />
                 </button>
               )}
+            </div>
+
+            <AccountAvatarButton
+              name={user?.name}
+              username={user?.username}
+              avatarUrl={user?.avatarUrl}
+              accountCount={session?.accounts?.length || 1}
+              compact
+              onOpen={openAccountSheet}
+            />
+          </div>
+
+          {/* Tablets and up: the search pill with the social links beside it. */}
+          <div className="hidden md:flex gap-3 shrink-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
+              <Search className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={1.75} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search chats"
+                className="flex-1 min-w-0 bg-transparent outline-none text-[13px] placeholder:text-zinc-400"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery('')} aria-label="Clear search" className="text-zinc-400">
+                  <X className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+              )}
+              {/* Tablets have no right-hand dock, so the compact avatar rides in
+                  the pill here — the same detail Mail keeps. */}
+              <span className="lg:hidden">
+                <AccountAvatarButton
+                  name={user?.name}
+                  username={user?.username}
+                  avatarUrl={user?.avatarUrl}
+                  accountCount={session?.accounts?.length || 1}
+                  compact
+                  onOpen={openAccountSheet}
+                />
+              </span>
             </div>
 
             <div className="hidden sm:flex items-center gap-1.5 h-12 px-3 rounded-2xl border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] overflow-x-auto">
