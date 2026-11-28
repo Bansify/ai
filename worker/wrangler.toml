@@ -29,6 +29,13 @@ compatibility_date = "2025-02-14"
 # for the same reason.
 keep_vars = true
 
+# Workers Builds runs `npx wrangler preview` (not `deploy`) for a non-production
+# branch, and that command refuses to start without this block. It is empty on
+# purpose: a preview then gets no D1 database and no secrets, so an unreviewed
+# branch can never read or trim production chat history. Production deploys
+# ignore this block.
+previews = {}
+
 # ai.bansify.com is a Pages custom domain. This route sends only /api/* to the
 # Worker and leaves every other path (the SPA) on Pages.
 routes = [
