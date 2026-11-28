@@ -11,7 +11,7 @@ Android app (Compose)     ─┘      ├── D1 (ai): users, providers, model
 ```
 
 ## Worker Endpoints (`worker/src/index.ts`)
-- `GET /v1/health` — uptime + degraded providers
+- `GET /v1/health` — returns `timestamp`, `degraded` providers list, and provider statuses
 - `GET /v1/models` — enabled models from D1
 - `GET /v1/providers` — provider list + daily quota remaining
 - `POST /v1/chat` — SSE streaming (`data: {"delta":"..."}` → `data: [DONE]`)

@@ -2,14 +2,32 @@ import React, { useRef, useState } from 'react';
 import { Send, Square } from 'lucide-react';
 import { ChatMsg, streamChat } from '../../../services/workerClient';
 
-interface UiMessage extends ChatMsg {
+export interface UiMessage extends ChatMsg {
   id: string;
   cached?: boolean;
 }
 
-export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
-  const [messages, setMessages] = useState<UiMessage[]>([]);
-  const [input, setInput] = useState('');
+interface ChatV2Props {
+  selectedModel?: string;
+  messages?: UiMessage[];
+  onMessagesChange?: React.Dispatch<React.SetStateAction<UiMessage[]>>;
+  input?: string;
+  onInputChange?: (val: string) => void;
+}
+
+export default function ChatV2({
+  selectedModel,
+  messages: controlledMessages,
+  onMessagesChange,
+  input: controlledInput,
+  onInputChange,
+}: ChatV2Props) {
+  const [localMessages, setLocalMessages] = useState<UiMessage[]>([]);
+  const [localInput, setLocalInput] = useState('');
+  const messages = controlledMessages ?? localMessages;
+  const setMessages = onMessagesChange ?? setLocalMessages;
+  const input = controlledInput ?? localInput;
+  const setInput = onInputChange ?? setLocalInput;
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
