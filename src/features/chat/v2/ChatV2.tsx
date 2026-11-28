@@ -116,14 +116,14 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 dark:border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 dark:border-[#333333]">
         <span className="text-sm font-medium text-zinc-500">
           {conversationId ? 'Chat' : 'New chat'}
         </span>
         <button
           onClick={startNewChat}
           aria-label="New chat"
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-neutral-300 dark:border-zinc-700 hover:border-[#2F6BFF] hover:text-[#2F6BFF]"
+          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-neutral-300 dark:border-[#383838] hover:border-[#2F6BFF] hover:text-[#2F6BFF]"
         >
           <Plus className="w-4 h-4" />
           New chat
@@ -178,7 +178,7 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
         )}
       </div>
 
-      <div className="p-3 border-t border-neutral-200 dark:border-zinc-800">
+      <div className="p-3 border-t border-neutral-200 dark:border-[#333333]">
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
           <textarea
             rows={1}
@@ -191,7 +191,7 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
               }
             }}
             placeholder="Message Bansify AI..."
-            className="flex-1 resize-none rounded-2xl border border-neutral-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-4 py-2.5 text-[16px] focus:outline-none focus:border-[#2F6BFF]"
+            className="flex-1 resize-none rounded-2xl border border-neutral-300 dark:border-[#383838] bg-zinc-50 dark:bg-[#212121] px-4 py-2.5 text-[16px] focus:outline-none focus:border-[#2F6BFF]"
           />
           {streaming ? (
             <button

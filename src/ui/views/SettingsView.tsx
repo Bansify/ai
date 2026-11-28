@@ -27,7 +27,7 @@ const Row: React.FC<{ label: string; value: string; action: string; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className={`ml-auto shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold border transition ${
+      className={`ml-auto shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold border border-neutral-300 dark:border-[#383838] transition ${
         danger
           ? 'border-red-300 text-red-600 hover:bg-red-50'
           : 'border-neutral-200 dark:border-[#333333] hover:border-[#0494f4]/40 hover:text-[#0494f4]'

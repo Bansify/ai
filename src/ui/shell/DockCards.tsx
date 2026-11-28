@@ -31,7 +31,7 @@ interface DockProps {
   email?: string;
   avatarUrl?: string | null;
   displayName: string;
-  onAccount: () => void;
+  onAccount: (anchor: HTMLElement | null) => void;
 }
 
 /** Card 4: the account avatar and the ecosystem dock, plus any open app panes. */
@@ -123,7 +123,7 @@ export const DockCards: React.FC<DockProps> = ({
       >
         <button
           type="button"
-          onClick={onAccount}
+          onClick={(event) => onAccount(event.currentTarget)}
           title={email}
           aria-label="Account"
           className="mb-1 w-9 h-9 rounded-full overflow-hidden bg-[#0494f4] text-white flex items-center justify-center text-xs font-bold cursor-pointer"
