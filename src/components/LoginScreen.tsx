@@ -1,37 +1,19 @@
 import React, { useState } from 'react';
-import { createGuestToken } from '../services/workerClient';
 
 const ACCOUNTS_URL =
   (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BANSIFY_ACCOUNTS_URL ||
   'https://accounts.bansify.com';
 
 interface LoginScreenProps {
-  onGuestSuccess?: (token: string) => void;
   onSuccess?: () => void;
 }
 
-export default function LoginScreen({ onGuestSuccess, onSuccess }: LoginScreenProps) {
-  const [loadingGuest, setLoadingGuest] = useState(false);
+export default function LoginScreen({ onSuccess }: LoginScreenProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleBansifyAccounts = () => {
     const redirectUri = encodeURIComponent(window.location.origin);
     window.location.href = `${ACCOUNTS_URL}/login?redirect=${redirectUri}`;
-  };
-
-  const handleGuest = async () => {
-    setLoadingGuest(true);
-    setError(null);
-    try {
-      const token = await createGuestToken();
-      localStorage.setItem('bansify_guest_token', token);
-      onGuestSuccess?.(token);
-      onSuccess?.();
-    } catch (err) {
-      setError((err as Error).message || 'Guest login failed');
-    } finally {
-      setLoadingGuest(false);
-    }
   };
 
   return (
@@ -45,7 +27,7 @@ export default function LoginScreen({ onGuestSuccess, onSuccess }: LoginScreenPr
             B
           </div>
           <h1 className="text-2xl font-semibold">Bansify AI</h1>
-          <p className="text-sm text-zinc-500">Sign in with your Bansify Account or continue as Guest.</p>
+          <p className="text-sm text-zinc-500">Sign in with your Bansify Account to continue.</p>
         </div>
 
         {error && (
@@ -63,13 +45,6 @@ export default function LoginScreen({ onGuestSuccess, onSuccess }: LoginScreenPr
             Continue with Bansify Accounts
           </button>
 
-          <button
-            onClick={() => void handleGuest()}
-            disabled={loadingGuest}
-            className="w-full py-3 px-4 rounded-2xl border border-zinc-300 dark:border-zinc-700 font-medium text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 disabled:opacity-50"
-          >
-            {loadingGuest ? 'Starting guest session...' : 'Continue as Guest'}
-          </button>
         </div>
       </div>
     </div>

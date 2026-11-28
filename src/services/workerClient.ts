@@ -1,12 +1,21 @@
-const metaEnv = (import.meta as unknown as { env?: { VITE_WORKER_URL?: string; DEV?: boolean } }).env;
-const envWorkerUrl = metaEnv?.VITE_WORKER_URL?.trim();
-const isLocalHost =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+/**
+ * Client for the Bansify AI Worker.
+ *
+ * The worker answers on `/api/*` of whatever host serves this app, so the default
+ * base is RELATIVE: on ai.bansify.com the browser calls `https://ai.bansify.com/api/v1/chat`,
+ * the Cloudflare route hands `/api/*` to the Worker, and the `.bansify.com`
+ * session cookie rides along automatically — same-origin, so there is no CORS
+ * preflight and no token to leak.
+ *
+ * `VITE_WORKER_URL` still overrides the base for a local Worker
+ * (`http://127.0.0.1:8787`) or a separate host.
+ */
 const WORKER_BASE = (
-  envWorkerUrl ||
-  (metaEnv?.DEV || isLocalHost ? 'http://127.0.0.1:8787' : 'https://bansifyai.bansify.workers.dev')
+  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WORKER_URL || '/api'
 ).replace(/\/+$/, '');
+
+/** The cookie session is what signs the website in, so every call sends it. */
+const REQUEST_OPTIONS: RequestInit = { credentials: 'include' };
 
 export interface WorkerModel {
   id: string;
@@ -33,50 +42,131 @@ export interface ChatMsg {
   content: string;
 }
 
+export interface RemoteConversation {
+  id: string;
+  title: string;
+  preview: string;
+  model_id: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface RemoteMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: number;
+}
+
+export interface MeResult {
+  authenticated: boolean;
+  user?: { id: string; username: string; email?: string | null; name?: string | null };
+  limits?: { daily_requests: number };
+  reset_at?: string;
+}
+
+async function readError(res: Response): Promise<Error> {
+  const body = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+  const error = new Error(body.error || `Request failed (${res.status})`);
+  (error as Error & { status?: number; code?: string }).status = res.status;
+  (error as Error & { status?: number; code?: string }).code =
+    body.code ?? (res.status === 401 ? 'auth_required' : res.status === 429 ? 'quota_exhausted' : undefined);
+  return error;
+}
+
+/** Who is signed in? Returns null instead of throwing when nobody is. */
+export async function fetchMe(): Promise<MeResult | null> {
+  const res = await fetch(`${WORKER_BASE}/v1/me`, { ...REQUEST_OPTIONS, headers: { Accept: 'application/json' } });
+  if (res.status === 401) return null;
+  if (!res.ok) throw await readError(res);
+  return (await res.json()) as MeResult;
+}
+
 export async function fetchModels(): Promise<WorkerModel[]> {
-  const res = await fetch(`${WORKER_BASE}/v1/models`);
-  if (!res.ok) throw new Error('Failed to load models');
+  const res = await fetch(`${WORKER_BASE}/v1/models`, { ...REQUEST_OPTIONS, headers: { Accept: 'application/json' } });
+  if (!res.ok) throw await readError(res);
   const data = (await res.json()) as { models: WorkerModel[] };
   return data.models ?? [];
 }
 
 export async function fetchProviders(): Promise<WorkerProvider[]> {
-  const res = await fetch(`${WORKER_BASE}/v1/providers`);
-  if (!res.ok) throw new Error('Failed to load providers');
+  const res = await fetch(`${WORKER_BASE}/v1/providers`, { ...REQUEST_OPTIONS, headers: { Accept: 'application/json' } });
+  if (!res.ok) throw await readError(res);
   const data = (await res.json()) as { providers: WorkerProvider[] };
   return data.providers ?? [];
 }
 
-export async function createGuestToken(): Promise<string> {
-  const res = await fetch(`${WORKER_BASE}/v1/guest`, { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to create guest session');
-  const data = (await res.json()) as { token: string };
-  return data.token;
+// --- Conversation sync -------------------------------------------------------
+// History lives in the worker's D1 database, so the website and the Android app
+// show the same threads for the same account.
+
+export async function listConversations(): Promise<RemoteConversation[]> {
+  const res = await fetch(`${WORKER_BASE}/v1/conversations`, { ...REQUEST_OPTIONS, headers: { Accept: 'application/json' } });
+  if (!res.ok) throw await readError(res);
+  const data = (await res.json()) as { conversations: RemoteConversation[] };
+  return data.conversations ?? [];
+}
+
+export async function getConversation(
+  id: string
+): Promise<{ conversation: RemoteConversation; messages: RemoteMessage[] }> {
+  const res = await fetch(`${WORKER_BASE}/v1/conversations/${encodeURIComponent(id)}`, {
+    ...REQUEST_OPTIONS,
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw await readError(res);
+  return (await res.json()) as { conversation: RemoteConversation; messages: RemoteMessage[] };
+}
+
+export async function renameConversation(id: string, title: string): Promise<void> {
+  const res = await fetch(`${WORKER_BASE}/v1/conversations/${encodeURIComponent(id)}`, {
+    ...REQUEST_OPTIONS,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title }),
+  });
+  if (!res.ok) throw await readError(res);
+}
+
+export async function deleteConversation(id: string): Promise<void> {
+  const res = await fetch(`${WORKER_BASE}/v1/conversations/${encodeURIComponent(id)}`, {
+    ...REQUEST_OPTIONS,
+    method: 'DELETE',
+  });
+  if (!res.ok) throw await readError(res);
 }
 
 export async function streamChat(params: {
   messages: ChatMsg[];
   model?: string;
+  conversationId?: string | null;
+  conversationTitle?: string;
+  style?: 'concise' | 'detailed' | 'hinglish';
   signal?: AbortSignal;
   onDelta: (delta: string) => void;
-  onMeta?: (meta: { cached: boolean; provider?: string; model?: string }) => void;
+  onMeta?: (meta: { cached: boolean; provider?: string; model?: string; conversationId?: string | null }) => void;
 }): Promise<void> {
   const res = await fetch(`${WORKER_BASE}/v1/chat`, {
+    ...REQUEST_OPTIONS,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: params.messages, model: params.model }),
+    body: JSON.stringify({
+      messages: params.messages,
+      model: params.model,
+      style: params.style,
+      conversation_id: params.conversationId ?? undefined,
+      conversation_title: params.conversationTitle,
+    }),
     signal: params.signal,
   });
 
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string; reset_at?: string };
-    throw new Error(err.error || `Request failed (${res.status})`);
-  }
+  if (!res.ok) throw await readError(res);
 
   params.onMeta?.({
     cached: res.headers.get('x-cache') === 'hit',
     provider: res.headers.get('x-provider') ?? undefined,
     model: res.headers.get('x-model') ?? undefined,
+    conversationId: res.headers.get('x-conversation-id') ?? params.conversationId ?? null,
   });
 
   if (!res.body) throw new Error('Empty response stream');

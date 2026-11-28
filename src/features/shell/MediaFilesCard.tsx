@@ -11,8 +11,8 @@ export interface SessionMediaItem {
 
 export default function MediaFilesCard({ items }: { items: SessionMediaItem[] }) {
   return (
-    <aside className="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 rounded-2xl border border-black/5 dark:border-white/5 bg-white dark:bg-[#212121] overflow-hidden">
-      <div className="px-4 py-3 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+    <aside className="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
+      <div className="px-4 py-3 border-b border-zinc-200/70 dark:border-zinc-800/80 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Files & Media</h3>
         <span className="text-xs text-zinc-500">{items.length}</span>
       </div>
