@@ -1,17 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Send, Square } from 'lucide-react';
-import {
-  ChatMsg,
-  getConversation,
-  listConversations,
-  streamChat,
-} from '../../../services/workerClient';
+import React, { useRef, useState } from 'react';
+import { Send, Square } from 'lucide-react';
+import { ChatMsg, streamChat } from '../../../services/workerClient';
 
 interface UiMessage extends ChatMsg {
   id: string;
   cached?: boolean;
-  /** Which provider actually answered — visible so switching is not a guess. */
-  via?: string;
 }
 
 export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
@@ -19,38 +12,7 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-
-  // History lives on the account (worker D1), so opening the site on a new
-  // device shows the same thread the Android app has.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const list = await listConversations();
-        if (cancelled || list.length === 0) return;
-        const detail = await getConversation(list[0].id);
-        if (cancelled) return;
-        setConversationId(detail.conversation.id);
-        setMessages(
-          detail.messages.map((m) => ({ id: m.id, role: m.role, content: m.content }))
-        );
-      } catch {
-        // Signed out, offline, or the worker is mid-deploy: start with an empty chat.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const startNewChat = () => {
-    abortRef.current?.abort();
-    setMessages([]);
-    setError(null);
-    setConversationId(null);
-  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -72,21 +34,11 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
       await streamChat({
         messages: nextHistory.map(({ role, content }) => ({ role, content })),
         model: selectedModel,
-        conversationId,
-        conversationTitle: nextHistory[0]?.content,
         signal: controller.signal,
         onMeta: (meta) => {
-          if (meta.conversationId && meta.conversationId !== conversationId) {
-            setConversationId(meta.conversationId);
+          if (meta.cached) {
+            setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, cached: true } : m)));
           }
-          const via = [meta.provider, meta.model].filter(Boolean).join(' · ');
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, cached: meta.cached, via: via || m.via }
-                : m
-            )
-          );
         },
         onDelta: (delta) => {
           setMessages((prev) =>
@@ -96,12 +48,7 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
       });
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        const code = (err as Error & { code?: string }).code;
-        setError(
-          code === 'auth_required'
-            ? 'Bansify Account se sign in karo, phir dobara bhejo.'
-            : (err as Error).message || 'Something went wrong'
-        );
+        setError((err as Error).message || 'Something went wrong');
       }
     } finally {
       setStreaming(false);
@@ -116,20 +63,6 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 dark:border-zinc-800">
-        <span className="text-sm font-medium text-zinc-500">
-          {conversationId ? 'Chat' : 'New chat'}
-        </span>
-        <button
-          onClick={startNewChat}
-          aria-label="New chat"
-          className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-zinc-300 dark:border-zinc-700 hover:border-[#2F6BFF] hover:text-[#2F6BFF]"
-        >
-          <Plus className="w-4 h-4" />
-          New chat
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
@@ -157,14 +90,9 @@ export default function ChatV2({ selectedModel }: { selectedModel?: string }) {
           ) : (
             <div key={m.id} className="w-full text-[16px] leading-[1.5] whitespace-pre-wrap">
               {m.content || (streaming ? '...' : '')}
-              {(m.via || m.cached) && (
-                <span className="mt-2 flex items-center gap-2 text-[11px] text-zinc-400">
-                  {m.via && <span>{m.via}</span>}
-                  {m.cached && (
-                    <span className="inline-block px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                      cached
-                    </span>
-                  )}
+              {m.cached && (
+                <span className="ml-2 inline-block text-[11px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                  cached
                 </span>
               )}
             </div>

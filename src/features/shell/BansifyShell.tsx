@@ -36,9 +36,9 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
   ];
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="h-screen w-full flex flex-col lg:flex-row bg-[#f6f8fc] dark:bg-[#1a1a1a] text-zinc-900 dark:text-zinc-100">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 p-3">
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-black/5 dark:border-white/5 bg-white dark:bg-[#212121] p-3">
         <div className="flex items-center justify-between px-2 py-2 mb-3">
           <div className="flex items-center gap-2">
             <div
@@ -108,7 +108,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col lg:p-3 lg:flex-row gap-3 overflow-hidden">
-        <div className="flex-1 min-w-0 h-full lg:rounded-2xl lg:border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
+        <div className="flex-1 min-w-0 h-full lg:rounded-2xl lg:border border-black/5 dark:border-white/5 bg-white dark:bg-[#212121] overflow-hidden">
           {tab === 'chat' && <ChatV2 key={activeSessionId} selectedModel={selectedModel} />}
           {tab === 'models' && (
             <ModelsScreen

@@ -1,6 +1,6 @@
 # Bansify AI
 
-One product, two clients — this **Web App** (React 19 + Vite 6 + Tailwind 4) and a native **Android App** (Jetpack Compose) — both powered by **one Cloudflare Worker** (`worker/`)
+One product, two clients — this **Web App** (React 19 + Vite 6 + Tailwind 4) and a native **Android App** (Jetpack Compose) — both powered by **one Cloudflare Worker** (`worker/`).
 
 ## Architecture
 

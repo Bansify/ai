@@ -1,46 +1,6 @@
-# =============================================================================
-# Bansify AI Worker config. NO SECRETS IN THIS FILE.
-#
-# 100% Cloudflare native: Workers + D1 (`ai` database) + KV cache. The Pages
-# project `bansifyai` serves the web UI on ai.bansify.com; this Worker only owns
-# `/api/*` on that host, exactly like `mail` does on mail.bansify.com.
-#
-# name MUST match the deployed Worker (`ai`). A rename here creates a second,
-# empty Worker and leaves production untouched - that is how the AI API silently
-# stopped answering before: the repo said `bansifyai`, the account has `ai`.
-#
-# Secrets (dashboard -> Variables & Secrets -> type "Secret", or
-# `npx wrangler secret put <NAME> --config worker/wrangler.toml`):
-#   SARVAM_API_KEY        primary provider (Sarvam 105B)
-#   OPENROUTER_API_KEY    fallback / open-weight models
-#   GROQ_API_KEY          optional fast free tier
-#   GEMINI_API_KEY        optional
-#   ADMIN_SERVICE_TOKEN   /admin/* routes
-#   BANSIFY_JWT_SECRET    reserved
-# =============================================================================
-
-name = "ai"
+name = "bansifyai"
 main = "src/index.ts"
 compatibility_date = "2025-02-14"
-
-# A deploy removes dashboard-set TEXT variables by default; secrets are normally
-# kept, but only if the deploy carries them through. `keep_vars` makes a deploy
-# unable to delete a variable an operator added in the dashboard. Mail sets this
-# for the same reason.
-keep_vars = true
-
-# Workers Builds runs `npx wrangler preview` (not `deploy`) for a non-production
-# branch, and that command refuses to start without this block. It is empty on
-# purpose: a preview then gets no D1 database and no secrets, so an unreviewed
-# branch can never read or trim production chat history. Production deploys
-# ignore this block.
-previews = {}
-
-# ai.bansify.com is a Pages custom domain. This route sends only /api/* to the
-# Worker and leaves every other path (the SPA) on Pages.
-routes = [
-  { pattern = "ai.bansify.com/api/*", zone_name = "bansify.com" }
-]
 
 [[d1_databases]]
 binding = "DB"
@@ -50,13 +10,14 @@ migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "CACHE"
-id = "6a0ac441c5b8464986ec752d8c0a2769"
+id = "00000000000000000000000000000000"
 
 [vars]
 ENVIRONMENT = "production"
-# Server-to-server base for Bansify Accounts (`/api/oauth/userinfo` lives under it).
-# Must be the Worker custom domain, not the Pages host: accounts.bansify.com
-# answers HTML for a server-to-server call.
-ACCOUNTS_API_URL = "https://api.bansify.com"
-# Kept for older clients that still read this name.
 BANSIFY_ACCOUNTS_URL = "https://accounts.bansify.com"
+# Secrets (set via `wrangler secret put <NAME>`, never in this file):
+# GEMINI_API_KEY
+# GROQ_API_KEY
+# OPENROUTER_API_KEY
+# BANSIFY_JWT_SECRET
+# ADMIN_SERVICE_TOKEN
