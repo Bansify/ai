@@ -57,20 +57,20 @@ const ScheduledView: React.FC<{ onRun: (prompt: string) => void }> = ({ onRun })
         server while the app is closed.
       </p>
 
-      <div className="rounded-2xl border border-zinc-200 dark:border-[#333333] p-3 space-y-2">
+      <div className="rounded-2xl border border-neutral-200 dark:border-[#333333] p-3 space-y-2">
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Prompt to queue"
           rows={2}
-          className="w-full rounded-lg border border-zinc-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none resize-y"
+          className="w-full rounded-lg border border-neutral-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none resize-y"
         />
         <div className="flex items-center gap-2">
           <input
             type="datetime-local"
             value={runAt}
             onChange={(e) => setRunAt(e.target.value)}
-            className="rounded-lg border border-zinc-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[12px] outline-none"
+            className="rounded-lg border border-neutral-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[12px] outline-none"
           />
           <button
             type="button"
@@ -82,7 +82,7 @@ const ScheduledView: React.FC<{ onRun: (prompt: string) => void }> = ({ onRun })
         </div>
       </div>
 
-      <div className="divide-y divide-zinc-200 dark:divide-[#333333] rounded-2xl border border-zinc-200 dark:border-[#333333] overflow-hidden">
+      <div className="divide-y divide-neutral-200 dark:divide-[#333333] rounded-2xl border border-neutral-200 dark:border-[#333333] overflow-hidden">
         {items.length === 0 && <p className="px-4 py-3 text-[13px] text-zinc-500">Nothing queued.</p>}
         {items.map((item) => (
           <div key={item.id} className="flex items-center gap-3 px-4 py-3">
@@ -93,7 +93,7 @@ const ScheduledView: React.FC<{ onRun: (prompt: string) => void }> = ({ onRun })
             <button
               type="button"
               onClick={() => onRun(item.prompt)}
-              className="rounded-full border border-zinc-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
+              className="rounded-full border border-neutral-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
             >
               Run now
             </button>

@@ -94,7 +94,7 @@ const PanelCard: React.FC<PanelCardProps> = ({
 
   return (
     <div
-      className={`flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] ${
+      className={`flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] ${
         isOpen ? 'w-[260px]' : 'w-16'
       }`}
     >

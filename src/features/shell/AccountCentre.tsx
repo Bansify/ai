@@ -24,15 +24,15 @@ export default function AccountCentre({ name = 'Bansify User', email = 'Guest se
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Account Centre"
-        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0 border border-zinc-200/60 dark:border-zinc-700/60"
+        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0 border border-neutral-200/60 dark:border-zinc-700/60"
         style={{ background: 'linear-gradient(135deg, #2F6BFF, #7A5CFF)' }}
       >
         {name.charAt(0).toUpperCase()}
       </button>
 
       {open && (
-        <div className="absolute right-0 bottom-12 lg:left-0 lg:right-auto lg:bottom-12 w-64 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg p-3 z-50 space-y-3">
-          <div className="flex items-center gap-3 pb-2 border-b border-zinc-200/70 dark:border-zinc-800">
+        <div className="absolute right-0 bottom-12 lg:left-0 lg:right-auto lg:bottom-12 w-64 rounded-2xl border border-neutral-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg p-3 z-50 space-y-3">
+          <div className="flex items-center gap-3 pb-2 border-b border-neutral-200/70 dark:border-zinc-800">
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
               style={{ background: 'linear-gradient(135deg, #2F6BFF, #7A5CFF)' }}

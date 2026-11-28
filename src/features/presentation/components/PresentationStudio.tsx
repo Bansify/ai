@@ -53,7 +53,7 @@ export default function PresentationStudio({ accentColor, isMobile, onToggleSide
 
   const templates = [
     { id: "tech_slate", name: "Modern Tech Slate", font: "font-sans", bg: "bg-zinc-900 border-zinc-850 text-zinc-100" },
-    { id: "minimal_swiss", name: "Minimal Swiss Light", font: "font-sans", bg: "bg-white border-zinc-200 text-zinc-950" },
+    { id: "minimal_swiss", name: "Minimal Swiss Light", font: "font-sans", bg: "bg-white border-neutral-200 text-zinc-950" },
     { id: "editorial_warm", name: "Editorial Serif Warm", font: "font-serif", bg: "bg-amber-50/90 border-amber-100 text-amber-950" }
   ];
 

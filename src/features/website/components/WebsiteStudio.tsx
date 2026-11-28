@@ -1074,7 +1074,7 @@ export default function WebsiteStudio({ accentColor, isMobile, onToggleSidebar, 
 
                       {/* Render QR code via Google Chart engine */}
                       {showQrCode && (
-                        <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl border border-zinc-200 text-center space-y-2 animate-fadeIn select-none">
+                        <div className="flex flex-col items-center justify-center p-3.5 bg-white rounded-xl border border-neutral-200 text-center space-y-2 animate-fadeIn select-none">
                           <img 
                             src={`https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=${encodeURIComponent(deployedUrl)}&choe=UTF-8`}
                             alt="Deployment QR"

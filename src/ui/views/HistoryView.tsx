@@ -62,8 +62,8 @@ const HistoryView: React.FC<{ onResume: (id: string) => void }> = ({ onResume })
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="flex w-1/2 min-w-0 flex-col border-r border-zinc-200 dark:border-[#333333]">
-        <div className="flex items-center gap-2 h-12 px-4 shrink-0 border-b border-zinc-200 dark:border-[#333333]">
+      <div className="flex w-1/2 min-w-0 flex-col border-r border-neutral-200 dark:border-[#333333]">
+        <div className="flex items-center gap-2 h-12 px-4 shrink-0 border-b border-neutral-200 dark:border-[#333333]">
           <Search className="w-4 h-4 text-zinc-400" strokeWidth={1.75} />
           <input
             value={query}
@@ -76,7 +76,7 @@ const HistoryView: React.FC<{ onResume: (id: string) => void }> = ({ onResume })
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-zinc-200 dark:divide-[#333333]">
+        <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-neutral-200 dark:divide-[#333333]">
           {error && <p className="p-4 text-[12px] text-red-500">{error}</p>}
           {!loading && filtered.length === 0 && !error && (
             <p className="p-4 text-[13px] text-zinc-500">No saved conversations yet.</p>

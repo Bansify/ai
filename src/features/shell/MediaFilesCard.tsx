@@ -11,8 +11,8 @@ export interface SessionMediaItem {
 
 export default function MediaFilesCard({ items }: { items: SessionMediaItem[] }) {
   return (
-    <aside className="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
-      <div className="px-4 py-3 border-b border-zinc-200/70 dark:border-zinc-800/80 flex items-center justify-between">
+    <aside className="hidden lg:flex flex-col w-72 xl:w-80 shrink-0 rounded-2xl border border-neutral-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
+      <div className="px-4 py-3 border-b border-neutral-200/70 dark:border-zinc-800/80 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Files & Media</h3>
         <span className="text-xs text-zinc-500">{items.length}</span>
       </div>
@@ -26,7 +26,7 @@ export default function MediaFilesCard({ items }: { items: SessionMediaItem[] })
           items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-2.5 p-2.5 rounded-xl border border-zinc-200/60 dark:border-zinc-800/70 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="flex items-center gap-2.5 p-2.5 rounded-xl border border-neutral-200/60 dark:border-zinc-800/70 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             >
               {item.kind === 'image' ? (
                 <ImageIcon className="w-4 h-4 text-[#2F6BFF] shrink-0" />

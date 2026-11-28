@@ -30,7 +30,7 @@ const Row: React.FC<{ label: string; value: string; action: string; onClick: () 
       className={`ml-auto shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold border transition ${
         danger
           ? 'border-red-300 text-red-600 hover:bg-red-50'
-          : 'border-zinc-200 dark:border-[#333333] hover:border-[#0494f4]/40 hover:text-[#0494f4]'
+          : 'border-neutral-200 dark:border-[#333333] hover:border-[#0494f4]/40 hover:text-[#0494f4]'
       }`}
     >
       {action}
@@ -52,7 +52,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   <div className="mx-auto max-w-2xl px-4 py-5 space-y-4 overflow-y-auto h-full">
     <h2 className="text-[16px] font-bold">Settings</h2>
 
-    <div className="rounded-2xl border border-zinc-200 dark:border-[#333333] divide-y divide-zinc-200 dark:divide-[#333333]">
+    <div className="rounded-2xl border border-neutral-200 dark:border-[#333333] divide-y divide-neutral-200 dark:divide-[#333333]">
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="min-w-0">
           <p className="text-[13px] font-semibold">Appearance</p>
@@ -61,7 +61,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="button"
           onClick={onToggleTheme}
-          className="ml-auto shrink-0 w-9 h-9 rounded-xl border border-zinc-200 dark:border-[#333333] flex items-center justify-center hover:border-[#0494f4]/40 hover:text-[#0494f4]"
+          className="ml-auto shrink-0 w-9 h-9 rounded-xl border border-neutral-200 dark:border-[#333333] flex items-center justify-center hover:border-[#0494f4]/40 hover:text-[#0494f4]"
           aria-label="Toggle theme"
         >
           {isDark ? <Sun className="w-4 h-4" strokeWidth={1.75} /> : <Moon className="w-4 h-4" strokeWidth={1.75} />}
@@ -78,7 +78,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="button"
           onClick={() => onSelectModel(undefined)}
-          className="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-full border border-zinc-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
+          className="ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-full border border-neutral-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
         >
           <Cpu className="w-3.5 h-3.5" strokeWidth={1.75} /> Reset to Auto
         </button>
