@@ -23,6 +23,12 @@ name = "ai"
 main = "src/index.ts"
 compatibility_date = "2025-02-14"
 
+# A deploy removes dashboard-set TEXT variables by default; secrets are normally
+# kept, but only if the deploy carries them through. `keep_vars` makes a deploy
+# unable to delete a variable an operator added in the dashboard. Mail sets this
+# for the same reason.
+keep_vars = true
+
 # ai.bansify.com is a Pages custom domain. This route sends only /api/* to the
 # Worker and leaves every other path (the SPA) on Pages.
 routes = [
