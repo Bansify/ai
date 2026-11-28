@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Code2, Cpu, MessageSquare, Plus, Settings } from 'lucide-react';
-import ChatV2 from '../chat/v2/ChatV2';
+import ChatV2, { UiMessage } from '../chat/v2/ChatV2';
 import ModelsScreen from '../models/ModelsScreen';
 import AccountCentre from './AccountCentre';
 import MediaFilesCard, { SessionMediaItem } from './MediaFilesCard';
@@ -19,7 +19,20 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
     { id: 'default', title: 'New Chat' },
   ]);
   const [activeSessionId, setActiveSessionId] = useState('default');
+  const [messagesBySession, setMessagesBySession] = useState<Record<string, UiMessage[]>>({});
+  const [inputBySession, setInputBySession] = useState<Record<string, string>>({});
   const [mediaItems] = useState<SessionMediaItem[]>([]);
+
+  const activeMessages = messagesBySession[activeSessionId] ?? [];
+  const activeInput = inputBySession[activeSessionId] ?? '';
+
+  const handleMessagesChange: React.Dispatch<React.SetStateAction<UiMessage[]>> = (updater) => {
+    setMessagesBySession((prev) => {
+      const current = prev[activeSessionId] ?? [];
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return { ...prev, [activeSessionId]: next };
+    });
+  };
 
   const handleNewChat = () => {
     const id = crypto.randomUUID();
@@ -109,7 +122,18 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col lg:p-3 lg:flex-row gap-3 overflow-hidden">
         <div className="flex-1 min-w-0 h-full lg:rounded-2xl lg:border border-black/5 dark:border-white/5 bg-white dark:bg-[#212121] overflow-hidden">
-          {tab === 'chat' && <ChatV2 key={activeSessionId} selectedModel={selectedModel} />}
+          {tab === 'chat' && (
+            <ChatV2
+              key={activeSessionId}
+              selectedModel={selectedModel}
+              messages={activeMessages}
+              onMessagesChange={handleMessagesChange}
+              input={activeInput}
+              onInputChange={(val) =>
+                setInputBySession((prev) => ({ ...prev, [activeSessionId]: val }))
+              }
+            />
+          )}
           {tab === 'models' && (
             <ModelsScreen
               selectedModel={selectedModel}

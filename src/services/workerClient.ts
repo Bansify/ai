@@ -1,9 +1,11 @@
-const envWorkerUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WORKER_URL?.trim();
+const metaEnv = (import.meta as unknown as { env?: { VITE_WORKER_URL?: string; DEV?: boolean } }).env;
+const envWorkerUrl = metaEnv?.VITE_WORKER_URL?.trim();
+const isLocalHost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 const WORKER_BASE = (
   envWorkerUrl ||
-  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-    ? 'https://bansifyai.bansify.workers.dev'
-    : 'http://127.0.0.1:8787')
+  (metaEnv?.DEV || isLocalHost ? 'http://127.0.0.1:8787' : 'https://bansifyai.bansify.workers.dev')
 ).replace(/\/+$/, '');
 
 export interface WorkerModel {
