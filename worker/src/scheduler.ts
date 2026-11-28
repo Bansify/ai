@@ -79,13 +79,17 @@ export async function rankProviders(
     });
   }
 
-  candidates.sort((a, b) => {
+  return sortCandidates(candidates);
+}
+
+export function sortCandidates<T extends { provider: { priority: number }; remaining: number; tier: number }>(
+  candidates: T[]
+): T[] {
+  return [...candidates].sort((a, b) => {
     if (b.tier !== a.tier) return b.tier - a.tier;
     if (b.remaining !== a.remaining) return b.remaining - a.remaining;
     return b.provider.priority - a.provider.priority;
   });
-
-  return candidates;
 }
 
 export async function markDegraded(env: Env, providerId: string): Promise<void> {

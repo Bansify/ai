@@ -7,6 +7,40 @@ export interface Env {
   OPENROUTER_API_KEY?: string;
   BANSIFY_JWT_SECRET?: string;
   ADMIN_SERVICE_TOKEN?: string;
+  ACCOUNTS_API_URL?: string;
+  SARVAM_API_KEY?: string;
+}
+
+export interface AiUser {
+  id: string;
+  bansify_user_id?: string;
+  username?: string | null;
+  email?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+  clientId?: string | null;
+  created_at?: number;
+}
+
+export interface ConversationRow {
+  id: string;
+  user_id: string;
+  title: string;
+  preview?: string | null;
+  archived?: number;
+  model_id?: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface MessageRow {
+  id: string;
+  conversation_id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  model_id?: string | null;
+  provider_id?: string | null;
+  created_at: number;
 }
 
 export interface ProviderRow {
