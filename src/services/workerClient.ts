@@ -1,4 +1,10 @@
-const WORKER_BASE = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WORKER_URL || 'http://127.0.0.1:8787';
+const envWorkerUrl = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_WORKER_URL?.trim();
+const WORKER_BASE = (
+  envWorkerUrl ||
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? 'https://bansifyai.bansify.workers.dev'
+    : 'http://127.0.0.1:8787')
+).replace(/\/+$/, '');
 
 export interface WorkerModel {
   id: string;
