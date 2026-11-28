@@ -25,6 +25,39 @@ function createMockEnv(state: FakeState = { conversations: [], messages: [] }): 
           return api;
         },
         async all() {
+          if (sql.includes('FROM providers')) {
+            return {
+              results: [
+                {
+                  id: 'groq',
+                  name: 'Groq',
+                  base_url: 'https://api.groq.com/openai/v1',
+                  key_env_name: 'GROQ_API_KEY',
+                  free_tier_json: '{"daily_requests":1000}',
+                  priority: 100,
+                  status: 'healthy',
+                  last_checked: 0,
+                  auto_enabled: 1,
+                },
+              ],
+            };
+          }
+          if (sql.includes('FROM models')) {
+            return {
+              results: [
+                {
+                  id: 'groq-gpt-oss-120b',
+                  provider_id: 'groq',
+                  model_id: 'openai/gpt-oss-120b',
+                  display_name: 'GPT-OSS 120B (Groq)',
+                  context_len: 131072,
+                  speed_class: 'instant',
+                  is_free: 1,
+                  enabled: 1,
+                },
+              ],
+            };
+          }
           if (sql.includes('FROM conversations')) {
             const userId = bound[0] as string;
             const rows = state.conversations
@@ -105,7 +138,10 @@ function createMockEnv(state: FakeState = { conversations: [], messages: [] }): 
     },
   } as unknown as KVNamespace;
 
-  return { env: { DB, CACHE, ACCOUNTS_API_URL: 'https://api.bansify.com' }, state };
+  return {
+    env: { DB, CACHE, ACCOUNTS_API_URL: 'https://api.bansify.com', GROQ_API_KEY: 'test_groq_key' } as Env,
+    state,
+  };
 }
 
 /** Stubs the Accounts userinfo call for the duration of one test. */
@@ -415,4 +451,51 @@ test('auto mode follows priority and never spends a manual-only provider', async
 
   const unknown = await rankProviders(env, 'not-a-model');
   assert.deepEqual(unknown.map((c) => c.provider.id), ['groq', 'zai']);
+});
+
+test('the FIRST message of a new chat is stored (no conversation_id needed)', async () => {
+  const { env, state } = createMockEnv();
+  const original = globalThis.fetch;
+  const restore = stubAccounts(USERINFO);
+  globalThis.fetch = (async (url: string) => {
+    const u = String(url);
+    if (u.includes('/api/oauth/userinfo')) {
+      return new Response(JSON.stringify(USERINFO), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response('data: {"choices":[{"delta":{"content":"hi there"}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+    });
+  }) as typeof fetch;
+
+  try {
+    const res = await handleRequest(
+      new Request('https://ai.bansify.com/api/v1/chat', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer access_token_abc', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'hello cloud' }] }),
+      }),
+      env
+    );
+    assert.equal(res.status, 200);
+
+    // Read the stream so onComplete runs.
+    const reader = res.body?.getReader();
+    while (reader) {
+      const { done } = await reader.read();
+      if (done) break;
+    }
+    await new Promise((r) => setTimeout(r, 50));
+
+    assert.equal(state.conversations.length, 1, 'a conversation must be created server-side');
+    assert.equal(state.conversations[0].user_id, 'user_123');
+    assert.equal(state.conversations[0].title, 'hello cloud');
+    const roles = state.messages.map((m) => m.role);
+    assert.ok(roles.includes('user'), 'the user turn must be stored');
+    assert.ok(roles.includes('assistant'), 'the assistant turn must be stored');
+    assert.ok(res.headers.get('x-conversation-id'), 'the client needs the id back');
+  } finally {
+    globalThis.fetch = original;
+    restore();
+  }
 });

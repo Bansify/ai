@@ -178,7 +178,11 @@ export async function handleRequest(
 
   if (request.method === 'GET' && path === '/v1/models') {
     const { results } = await env.DB.prepare(
-      'SELECT id, provider_id, model_id, display_name, context_len, speed_class, is_free, enabled FROM models WHERE enabled = 1 ORDER BY is_free DESC, display_name ASC'
+      `SELECT m.id, m.provider_id, m.model_id, m.display_name, m.context_len, m.speed_class, m.is_free, m.enabled
+         FROM models m
+         JOIN providers p ON p.id = m.provider_id
+        WHERE m.enabled = 1 AND p.status != 'unavailable' AND p.auto_enabled IS NOT NULL
+        ORDER BY m.is_free DESC, m.display_name ASC`
     ).all<ModelRow>();
     return jsonResponse({ models: results ?? [] });
   }
@@ -268,7 +272,11 @@ export async function handleRequest(
     // Persist the turn first, so a dropped stream still leaves the question saved.
     let conversationId: string | undefined;
     const lastUserMessage = [...body.messages].reverse().find((m) => m.role === 'user');
-    if (user && body.conversation_id) {
+    // Persist whenever someone is signed in — including the FIRST message of a
+    // new chat, which has no conversation_id yet. Requiring one meant a new
+    // conversation was never created, so nothing reached D1 and history stayed
+    // empty on every other device.
+    if (user) {
       const conversation = await ensureConversation(
         env,
         user.id,
