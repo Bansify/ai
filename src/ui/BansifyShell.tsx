@@ -6,6 +6,8 @@ import { APP_DOCK } from '../data/dock';
 import { SOCIAL_LINKS } from '../data/social';
 import PanelCard from './shell/PanelCard';
 import { DockCards } from './shell/DockCards';
+import AccountSheet from '../components/AccountSheet';
+import type { BansifySession } from '../lib/bansifySession';
 import HistoryView from './views/HistoryView';
 import ModelsView from './views/ModelsView';
 import LibraryView from './views/LibraryView';
@@ -35,8 +37,8 @@ interface BansifyShellProps {
   onToggleTheme: () => void;
   onLogout?: () => void;
   accountHref: string;
-  /** Opens the shared account control centre; falls back to accountHref. */
-  onOpenAccount?: (anchor: HTMLElement | null) => void;
+  /** The live session, so the shared account sheet can list the accounts. */
+  session?: BansifySession | null;
   models?: string[];
 }
 
@@ -67,7 +69,7 @@ const SUGGESTIONS = [
 ];
 
 /** The website's five-card layout: panel, search pill, content, social card, dock. */
-export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref, onOpenAccount }) => {
+export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref, session }) => {
   const [section, setSection] = useState<Section>('chat');
   const [open, setOpen] = useState(true);
   const [mobileNav, setMobileNav] = useState(false);
@@ -114,6 +116,13 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
 
   const isDark = themeMode === 'dark';
   const displayName = user?.name || user?.username || 'Bansify user';
+  // Mail opens the Accounts-hosted sheet from the avatar; same here.
+  const [accountSheet, setAccountSheet] = useState<{ open: boolean; anchor: HTMLElement | null }>({
+    open: false,
+    anchor: null,
+  });
+  const openAccountSheet = (anchor: HTMLElement | null) => setAccountSheet({ open: true, anchor });
+  const closeAccountSheet = () => setAccountSheet((state) => ({ ...state, open: false }));
   const title = useMemo(() => SECTIONS.find((n) => n.id === section)?.label ?? 'Chat', [section]);
 
   const openPane = (item: RailItem) =>
@@ -150,10 +159,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
       email={user?.email}
       avatarUrl={user?.avatarUrl}
       accountHref={accountHref}
-      onAccount={(anchor) => {
-        if (onOpenAccount) onOpenAccount(anchor);
-        else window.location.href = accountHref;
-      }}
+      onAccount={openAccountSheet}
     />
   );
 
@@ -319,12 +325,23 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
           email={user?.email}
           avatarUrl={user?.avatarUrl}
           displayName={displayName}
-          onAccount={(anchor) => {
-            if (onOpenAccount) onOpenAccount(anchor);
-            else window.location.href = accountHref;
-          }}
+          onAccount={openAccountSheet}
         />
       </div>
+
+      <AccountSheet
+        isOpen={accountSheet.open}
+        anchorEl={accountSheet.anchor}
+        session={session ?? null}
+        theme={isDark ? 'dark' : 'light'}
+        onClose={closeAccountSheet}
+        onSignOut={() => {
+          if (onLogout) onLogout();
+          else window.location.href = accountHref;
+        }}
+        onOpenSettings={() => setSection('settings')}
+        onToggleTheme={onToggleTheme}
+      />
     </div>
   );
 };
