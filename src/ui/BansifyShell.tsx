@@ -35,6 +35,8 @@ interface BansifyShellProps {
   onToggleTheme: () => void;
   onLogout?: () => void;
   accountHref: string;
+  /** Opens the shared account control centre; falls back to accountHref. */
+  onOpenAccount?: (anchor: HTMLElement | null) => void;
   models?: string[];
 }
 
@@ -65,7 +67,7 @@ const SUGGESTIONS = [
 ];
 
 /** The website's five-card layout: panel, search pill, content, social card, dock. */
-export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref }) => {
+export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onToggleTheme, onLogout, accountHref, onOpenAccount }) => {
   const [section, setSection] = useState<Section>('chat');
   const [open, setOpen] = useState(true);
   const [mobileNav, setMobileNav] = useState(false);
@@ -148,8 +150,9 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
       email={user?.email}
       avatarUrl={user?.avatarUrl}
       accountHref={accountHref}
-      onAccount={() => {
-        window.location.href = accountHref;
+      onAccount={(anchor) => {
+        if (onOpenAccount) onOpenAccount(anchor);
+        else window.location.href = accountHref;
       }}
     />
   );
@@ -316,8 +319,9 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
           email={user?.email}
           avatarUrl={user?.avatarUrl}
           displayName={displayName}
-          onAccount={() => {
-            window.location.href = accountHref;
+          onAccount={(anchor) => {
+            if (onOpenAccount) onOpenAccount(anchor);
+            else window.location.href = accountHref;
           }}
         />
       </div>

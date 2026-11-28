@@ -15,7 +15,7 @@ import { getAppModels, saveAppModels, AIModel } from "./utils/modelRegistry";
 import { BansifyShell, type ShellUser } from "./ui/BansifyShell";
 import LoginScreen from "./components/LoginScreen";
 import { fetchBansifySession, type BansifySession } from "./lib/bansifySession";
-import { preloadAccountMenu } from "./lib/accountMenu";
+import { openAccountMenu, preloadAccountMenu } from "./lib/accountMenu";
 import SplashScreen from "./components/SplashScreen";
 import { SettingsView } from "./features/settings";
 
@@ -747,6 +747,11 @@ export default function App() {
           />
         ) : (
           <BansifyShell
+            onOpenAccount={(anchor) => {
+              // Same control centre Mail opens — not a jump to accounts.bansify.com.
+              if (bansifySession?.authenticated) openAccountMenu(bansifySession, anchor);
+              else window.location.href = "https://accounts.bansify.com/account";
+            }}
             user={(bansifySession?.user as ShellUser | null) ?? (user as ShellUser | null)}
             themeMode={isDarkActive ? 'dark' : 'light'}
             onToggleTheme={() => handleThemeModeChange(isDarkActive ? 'light' : 'dark')}

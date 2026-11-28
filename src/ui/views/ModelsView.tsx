@@ -59,7 +59,7 @@ const ModelsView: React.FC<{ selected?: string; onSelect: (id: string | undefine
         <button
           type="button"
           onClick={() => onSelect(undefined)}
-          className={`ml-auto rounded-full px-3 py-1.5 text-[12px] font-semibold border transition ${
+          className={`ml-auto rounded-full px-3 py-1.5 text-[12px] font-semibold border border-neutral-300 dark:border-[#383838] transition ${
             !selected ? 'border-[#0494f4] text-[#0494f4]' : 'border-neutral-200 dark:border-[#333333] hover:text-[#0494f4]'
           }`}
         >

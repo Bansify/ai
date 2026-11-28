@@ -27,7 +27,7 @@ interface PanelCardProps {
   email?: string;
   avatarUrl?: string | null;
   accountHref: string;
-  onAccount: () => void;
+  onAccount: (anchor: HTMLElement | null) => void;
 }
 
 const Row: React.FC<{
@@ -186,7 +186,7 @@ const PanelCard: React.FC<PanelCardProps> = ({
         )}
         <button
           type="button"
-          onClick={onAccount}
+          onClick={(event) => onAccount(event.currentTarget)}
           title={email}
           className={`w-full flex items-center gap-2.5 py-3 hover:bg-zinc-50 dark:hover:bg-[#333333] text-left cursor-pointer ${
             isOpen ? 'px-3' : 'justify-center px-0'

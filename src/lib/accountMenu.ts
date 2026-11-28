@@ -10,10 +10,10 @@ import { ACCOUNTS_WEB_ORIGIN } from './bansifySession';
 const WIDGET_URL = `${ACCOUNTS_WEB_ORIGIN}/widget/account-menu.js`;
 let loading: Promise<void> | null = null;
 
-export function preloadAccountMenu(): void {
-  if (typeof document === 'undefined') return;
-  if ((window as unknown as { GothwadAccountMenu?: unknown }).GothwadAccountMenu) return;
-  if (loading) return;
+export function preloadAccountMenu(): Promise<void> {
+  if (typeof document === 'undefined') return Promise.resolve();
+  if ((window as unknown as { GothwadAccountMenu?: unknown }).GothwadAccountMenu) return Promise.resolve();
+  if (loading) return loading;
   loading = new Promise<void>((resolve) => {
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${WIDGET_URL}"]`);
     if (existing) {
@@ -28,13 +28,44 @@ export function preloadAccountMenu(): void {
     script.onerror = () => resolve();
     document.head.appendChild(script);
   });
+  return loading;
 }
 
-export function openAccountMenu(session: BansifySession, anchor?: HTMLElement | null): void {
-  preloadAccountMenu();
+/**
+ * Opens the shared account control centre (the same sheet Mail and Drive show).
+ *
+ * Returns `true` when the widget took the click. The caller uses that to decide
+ * whether to fall back to a navigation, so a click never does nothing.
+ */
+export function openAccountMenu(session: BansifySession, anchor?: HTMLElement | null): boolean {
   const widget = (window as unknown as {
     GothwadAccountMenu?: { open: (state: unknown, options: unknown) => void };
   }).GothwadAccountMenu;
+
+  if (!widget) {
+    // First click before the script finished loading: load it, then open.
+    preloadAccountMenu().then(() => {
+      const ready = (window as unknown as {
+        GothwadAccountMenu?: { open: (state: unknown, options: unknown) => void };
+      }).GothwadAccountMenu;
+      if (ready) {
+        openWith(ready, session, anchor);
+      } else if (typeof window !== 'undefined') {
+        window.location.href = `${ACCOUNTS_WEB_ORIGIN}/account`;
+      }
+    });
+    return true;
+  }
+
+  openWith(widget, session, anchor);
+  return true;
+}
+
+function openWith(
+  widget: { open: (state: unknown, options: unknown) => void },
+  session: BansifySession,
+  anchor?: HTMLElement | null
+): void {
 
   widget?.open(
     {
