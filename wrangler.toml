@@ -1,0 +1,46 @@
+# =============================================================================
+# ROOT wrangler config — read this before editing.
+#
+# The real Worker config is `worker/wrangler.toml`, and the Workers Builds
+# trigger deploys with `root_directory = worker`, so production builds read that
+# file and this one is ignored.
+#
+# This file exists for ONE reason: Cloudflare runs `npx wrangler preview` from
+# the REPOSITORY ROOT for every non-production branch (pull requests). That
+# command refuses to start without a config it can find, so every PR showed a red
+# "Workers Builds: ai" check even though production was fine.
+#
+# It also removes a worse failure mode: if a build ever runs `wrangler deploy`
+# from the root by mistake, it now deploys the correct Worker with its D1 and KV
+# bindings, instead of replacing `ai` with an empty, config-less script and
+# wiping every binding and secret (that is exactly what happened on 2026-11-28).
+#
+# Keep `name`, `main`, the bindings and the vars in sync with worker/wrangler.toml.
+# Do NOT add `routes` here: a preview must never try to claim ai.bansify.com.
+# Do NOT put secrets in either file.
+# =============================================================================
+
+name = "ai"
+main = "worker/src/index.ts"
+compatibility_date = "2025-02-14"
+
+keep_vars = true
+
+# Required by `npx wrangler preview`. Empty on purpose: a preview gets no secrets,
+# so an unreviewed branch can never answer a real chat request.
+previews = {}
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai"
+database_id = "a0f1ac80-2a02-48b6-9dd7-872be6708140"
+migrations_dir = "worker/migrations"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "6a0ac441c5b8464986ec752d8c0a2769"
+
+[vars]
+ENVIRONMENT = "production"
+ACCOUNTS_API_URL = "https://api.bansify.com"
+BANSIFY_ACCOUNTS_URL = "https://accounts.bansify.com"
