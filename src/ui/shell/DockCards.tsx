@@ -55,13 +55,13 @@ export const DockCards: React.FC<DockProps> = ({
         return (
           <section
             key={item.id}
-            className={`hidden lg:flex shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] ${
+            className={`hidden lg:flex shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] ${
               isCollapsed ? 'w-14' : 'w-[38%] max-w-[560px]'
             }`}
             aria-label={item.label}
           >
             <div
-              className={`flex items-center gap-2 h-12 px-3 shrink-0 border-b border-zinc-200 dark:border-[#333333] ${
+              className={`flex items-center gap-2 h-12 px-3 shrink-0 border-b border-neutral-200 dark:border-[#333333] ${
                 isCollapsed ? 'justify-center px-0' : ''
               }`}
             >
@@ -118,7 +118,7 @@ export const DockCards: React.FC<DockProps> = ({
       })}
 
       <aside
-        className="hidden lg:flex w-16 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-zinc-200 bg-white py-3 dark:border-[#333333] dark:bg-[#2a2a2a]"
+        className="hidden lg:flex w-16 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-neutral-200 bg-white py-3 dark:border-[#333333] dark:bg-[#2a2a2a]"
         aria-label="Bansify apps"
       >
         <button

@@ -59,19 +59,19 @@ const LibraryView: React.FC<{ onUse: (prompt: string) => void }> = ({ onUse }) =
         <span className="text-[11px] text-zinc-500">{count} saved</span>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 dark:border-[#333333] p-3 space-y-2">
+      <div className="rounded-2xl border border-neutral-200 dark:border-[#333333] p-3 space-y-2">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title"
-          className="w-full rounded-lg border border-zinc-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none"
+          className="w-full rounded-lg border border-neutral-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none"
         />
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Prompt"
           rows={3}
-          className="w-full rounded-lg border border-zinc-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none resize-y"
+          className="w-full rounded-lg border border-neutral-200 dark:border-[#333333] bg-transparent px-3 py-2 text-[13px] outline-none resize-y"
         />
         <button
           type="button"
@@ -82,7 +82,7 @@ const LibraryView: React.FC<{ onUse: (prompt: string) => void }> = ({ onUse }) =
         </button>
       </div>
 
-      <div className="divide-y divide-zinc-200 dark:divide-[#333333] rounded-2xl border border-zinc-200 dark:border-[#333333] overflow-hidden">
+      <div className="divide-y divide-neutral-200 dark:divide-[#333333] rounded-2xl border border-neutral-200 dark:border-[#333333] overflow-hidden">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
@@ -92,7 +92,7 @@ const LibraryView: React.FC<{ onUse: (prompt: string) => void }> = ({ onUse }) =
             <button
               type="button"
               onClick={() => onUse(item.prompt)}
-              className="rounded-full border border-zinc-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
+              className="rounded-full border border-neutral-200 dark:border-[#333333] px-3 py-1.5 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
             >
               Use
             </button>

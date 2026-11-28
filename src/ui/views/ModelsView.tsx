@@ -60,7 +60,7 @@ const ModelsView: React.FC<{ selected?: string; onSelect: (id: string | undefine
           type="button"
           onClick={() => onSelect(undefined)}
           className={`ml-auto rounded-full px-3 py-1.5 text-[12px] font-semibold border transition ${
-            !selected ? 'border-[#0494f4] text-[#0494f4]' : 'border-zinc-200 dark:border-[#333333] hover:text-[#0494f4]'
+            !selected ? 'border-[#0494f4] text-[#0494f4]' : 'border-neutral-200 dark:border-[#333333] hover:text-[#0494f4]'
           }`}
         >
           {!selected && <Check className="inline w-3 h-3 mr-1" strokeWidth={2} />}Auto — best free
@@ -73,8 +73,8 @@ const ModelsView: React.FC<{ selected?: string; onSelect: (id: string | undefine
       {groups.map(([providerId, list]) => {
         const provider = providerById.get(providerId);
         return (
-          <section key={providerId} className="rounded-2xl border border-zinc-200 dark:border-[#333333] overflow-hidden">
-            <header className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-zinc-200 dark:border-[#333333]">
+          <section key={providerId} className="rounded-2xl border border-neutral-200 dark:border-[#333333] overflow-hidden">
+            <header className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-neutral-200 dark:border-[#333333]">
               <span className="text-[13px] font-semibold">{PROVIDER_NAMES[providerId] ?? providerId}</span>
               {provider && (
                 <span className="text-[11px] text-zinc-500">
@@ -82,7 +82,7 @@ const ModelsView: React.FC<{ selected?: string; onSelect: (id: string | undefine
                 </span>
               )}
             </header>
-            <div className="divide-y divide-zinc-200 dark:divide-[#333333]">
+            <div className="divide-y divide-neutral-200 dark:divide-[#333333]">
               {list.map((m) => {
                 const active = selected === m.id;
                 return (

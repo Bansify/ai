@@ -15,7 +15,7 @@ import { getAppModels, saveAppModels, AIModel } from "./utils/modelRegistry";
 import { BansifyShell, type ShellUser } from "./ui/BansifyShell";
 import LoginScreen from "./components/LoginScreen";
 import { fetchBansifySession, type BansifySession } from "./lib/bansifySession";
-import { openAccountMenu, preloadAccountMenu } from "./lib/accountMenu";
+import { preloadAccountMenu } from "./lib/accountMenu";
 import SplashScreen from "./components/SplashScreen";
 import { SettingsView } from "./features/settings";
 
@@ -712,26 +712,6 @@ export default function App() {
       style={containerStyle}
       className="flex flex-col bg-zinc-950 text-zinc-300 selection:bg-zinc-850 select-none overflow-hidden font-sans relative"
     >
-      {bansifySession?.authenticated && !showSplash && (
-        <button
-          type="button"
-          onClick={(e) => openAccountMenu(bansifySession, e.currentTarget)}
-          title={bansifySession.user?.email || "Bansify account"}
-          aria-label="Bansify account"
-          className="absolute right-3 top-3 z-50 w-9 h-9 rounded-full overflow-hidden bg-[#0494f4] text-white flex items-center justify-center text-xs font-bold ring-1 ring-white/20"
-        >
-          {bansifySession.user?.avatarUrl || bansifySession.user?.avatar_url ? (
-            <img
-              src={(bansifySession.user.avatarUrl || bansifySession.user.avatar_url) as string}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            (bansifySession.user?.name || bansifySession.user?.username || "B").slice(0, 1).toUpperCase()
-          )}
-        </button>
-      )}
-
       <React.Suspense fallback={
         <SplashScreen status="INITIALIZING GOTHWAD WORKSPACE..." accentColor={accentColor} isDarkActive={isDarkActive} />
       }>

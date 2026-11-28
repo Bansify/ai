@@ -173,7 +173,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
 
         <div className="flex flex-1 min-w-0 flex-col gap-3">
           <div className="flex gap-3 shrink-0">
-            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
+            <div className="flex-1 min-w-0 flex items-center gap-2 h-12 px-4 rounded-full border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
               <button
                 type="button"
                 onClick={() => setMobileNav(true)}
@@ -196,7 +196,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
               )}
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 h-12 px-3 rounded-2xl border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] overflow-x-auto">
+            <div className="hidden sm:flex items-center gap-1.5 h-12 px-3 rounded-2xl border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a] overflow-x-auto">
               {SOCIAL_LINKS.map((social) => {
                 const Icon = social.icon;
                 return (
@@ -217,15 +217,15 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
             </div>
           </div>
 
-          <main className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
-            <div className="flex items-center gap-2 h-12 px-4 shrink-0 border-b border-zinc-200 dark:border-[#333333]">
+          <main className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-[#333333] dark:bg-[#2a2a2a]">
+            <div className="flex items-center gap-2 h-12 px-4 shrink-0 border-b border-neutral-200 dark:border-[#333333]">
               <span className="text-[13px] font-semibold">{title}</span>
               {section === 'chat' && (
                 <select
                   value={model ?? ''}
                   onChange={(e) => setModel(e.target.value || undefined)}
                   aria-label="Model and provider"
-                  className="ml-2 h-8 max-w-[220px] rounded-lg bg-transparent border border-zinc-200 dark:border-[#333333] text-[12px] px-2 outline-none"
+                  className="ml-2 h-8 max-w-[220px] rounded-lg bg-transparent border border-neutral-200 dark:border-[#333333] text-[12px] px-2 outline-none"
                 >
                   <option value="">Auto — best free</option>
                   {modelGroups.map(([providerId, list]) => (
@@ -257,7 +257,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
                       </p>
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {SUGGESTIONS.map((s) => (
-                          <div key={s.title} className="rounded-2xl border border-zinc-200 dark:border-[#333333] p-3">
+                          <div key={s.title} className="rounded-2xl border border-neutral-200 dark:border-[#333333] p-3">
                             <p className="text-[13px] font-semibold">{s.title}</p>
                             <p className="mt-0.5 text-[12px] text-zinc-500">{s.body}</p>
                           </div>
@@ -281,7 +281,7 @@ export const BansifyShell: React.FC<BansifyShellProps> = ({ user, themeMode, onT
                     href="https://github.com/settings/installations"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex rounded-full border border-zinc-200 dark:border-[#333333] px-4 py-2 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
+                    className="inline-flex rounded-full border border-neutral-200 dark:border-[#333333] px-4 py-2 text-[12px] font-semibold hover:border-[#0494f4]/40 hover:text-[#0494f4]"
                   >
                     Manage GitHub access
                   </a>

@@ -18,7 +18,7 @@ export default function LoginScreen({ onSuccess }: LoginScreenProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 p-4">
-      <div className="w-full max-w-sm rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
+      <div className="w-full max-w-sm rounded-3xl border border-neutral-200 dark:border-zinc-800 p-6 space-y-6">
         <div className="text-center space-y-2">
           <div
             className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-white font-bold text-2xl"

@@ -38,7 +38,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
   return (
     <div className="h-screen w-full flex flex-col lg:flex-row bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 p-3">
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-neutral-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 p-3">
         <div className="flex items-center justify-between px-2 py-2 mb-3">
           <div className="flex items-center gap-2">
             <div
@@ -76,7 +76,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
         </nav>
 
         {/* Recent Chats directly in sidebar (no separate History tab) */}
-        <div className="mt-6 flex-1 overflow-y-auto border-t border-zinc-200/70 dark:border-zinc-800/80 pt-3">
+        <div className="mt-6 flex-1 overflow-y-auto border-t border-neutral-200/70 dark:border-zinc-800/80 pt-3">
           <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
             Recent Chats
           </div>
@@ -100,7 +100,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
           </div>
         </div>
 
-        <div className="pt-3 border-t border-zinc-200/70 dark:border-zinc-800/80 flex items-center justify-between px-1">
+        <div className="pt-3 border-t border-neutral-200/70 dark:border-zinc-800/80 flex items-center justify-between px-1">
           <AccountCentre onSignOut={onSignOut} />
           <span className="text-xs text-zinc-500">Account Centre</span>
         </div>
@@ -108,7 +108,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col lg:p-3 lg:flex-row gap-3 overflow-hidden">
-        <div className="flex-1 min-w-0 h-full lg:rounded-2xl lg:border border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
+        <div className="flex-1 min-w-0 h-full lg:rounded-2xl lg:border border-neutral-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden">
           {tab === 'chat' && <ChatV2 key={activeSessionId} selectedModel={selectedModel} />}
           {tab === 'models' && (
             <ModelsScreen
@@ -131,7 +131,7 @@ export default function BansifyShell({ onSignOut }: { onSignOut?: () => void }) 
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden flex items-center justify-around border-t border-zinc-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 py-2 px-2 shrink-0">
+      <nav className="lg:hidden flex items-center justify-around border-t border-neutral-200/70 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 py-2 px-2 shrink-0">
         {navItems.map((item) => (
           <button
             key={item.id}
