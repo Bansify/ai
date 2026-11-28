@@ -18,6 +18,17 @@ export function getNextUtcReset(): string {
   return next.toISOString();
 }
 
+/**
+ * The providers a request may use, in the order it will try them.
+ *
+ * Two modes:
+ *  - **Auto** (no model requested): every provider with `auto_enabled = 1`, in
+ *    priority order. Sarvam is `auto_enabled = 0` on purpose — it is the paid
+ *    provider, so it only runs when the user picks it by name.
+ *  - **Explicit model**: only the providers that actually serve that model. A
+ *    user who picks `sarvam-105b` gets Sarvam, not "Sarvam-or-whatever-is-cheap";
+ *    a request for a model nobody serves falls back to the auto chain.
+ */
 export async function rankProviders(
   env: Env,
   requestedModelId?: string
@@ -31,8 +42,10 @@ export async function rankProviders(
     'SELECT provider_id, requests FROM usage WHERE day = ?'
   ).bind(day).all<{ provider_id: string; requests: number }>();
 
+  // Ordered, because `pModels[0]` is the model a provider answers with when the
+  // caller did not pick one: biggest context first, free before paid, then name.
   const { results: models } = await env.DB.prepare(
-    'SELECT * FROM models WHERE enabled = 1'
+    'SELECT * FROM models WHERE enabled = 1 ORDER BY is_free DESC, context_len DESC, display_name ASC'
   ).all<ModelRow>();
 
   const usageMap = new Map((usageRows ?? []).map((u) => [u.provider_id, u.requests]));
@@ -62,10 +75,26 @@ export async function rankProviders(
     const pModels = modelsByProvider.get(p.id) ?? [];
     if (pModels.length === 0) continue;
 
-    const matched = requestedModelId
-      ? pModels.find((m) => m.id === requestedModelId || m.model_id === requestedModelId)
-      : undefined;
-    const chosenModel = matched ?? pModels[0];
+    if (requestedModelId) {
+      // Explicit choice: only the provider that owns this model may answer.
+      const matched = pModels.find((m) => m.id === requestedModelId || m.model_id === requestedModelId);
+      if (!matched) continue;
+      const chosenModel = matched;
+      const usedRatioExplicit = dailyLimit > 0 ? used / dailyLimit : 0;
+      candidates.push({
+        provider: p,
+        modelId: chosenModel.model_id,
+        remaining,
+        dailyLimit,
+        tier: usedRatioExplicit > 0.8 ? 0 : 1,
+      });
+      continue;
+    }
+
+    // Auto: paid providers stay out of the chain unless the operator enables them.
+    if (p.auto_enabled === 0) continue;
+
+    const chosenModel = pModels[0];
 
     const usedRatio = dailyLimit > 0 ? used / dailyLimit : 0;
     const tier = usedRatio > 0.8 ? 0 : 1;
@@ -79,16 +108,32 @@ export async function rankProviders(
     });
   }
 
+  // A model id nobody serves (an old client, a renamed model) must not turn into
+  // "no provider available": fall back to the automatic chain instead.
+  if (requestedModelId && candidates.length === 0) {
+    return rankProviders(env);
+  }
+
   return sortCandidates(candidates);
 }
 
+/**
+ * The fallback chain, in the order a request walks it.
+ *
+ * 1. `tier`   — a provider past 80% of its daily budget drops behind healthy ones.
+ * 2. priority — the operator's own ranking (Sarvam first, then the free tiers in
+ *               the order they want them tried). This is what makes the chain
+ *               predictable: before, a provider with a huge free quota always won
+ *               and priority only broke ties.
+ * 3. remaining — the same priority twice: spend the one with more left.
+ */
 export function sortCandidates<T extends { provider: { priority: number }; remaining: number; tier: number }>(
   candidates: T[]
 ): T[] {
   return [...candidates].sort((a, b) => {
     if (b.tier !== a.tier) return b.tier - a.tier;
-    if (b.remaining !== a.remaining) return b.remaining - a.remaining;
-    return b.provider.priority - a.provider.priority;
+    if (b.provider.priority !== a.provider.priority) return b.provider.priority - a.provider.priority;
+    return b.remaining - a.remaining;
   });
 }
 

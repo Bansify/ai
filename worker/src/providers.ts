@@ -17,13 +17,34 @@ export class ProviderError extends Error {
   }
 }
 
+/**
+ * Resolves a provider's key from its `key_env_name` column.
+ *
+ * Deliberately dynamic: adding a provider (Z.ai, SambaNova, Workers AI, ...) is
+ * one `providers` row plus one Worker secret, with no code change and no deploy
+ * of a new map. A row whose secret is missing simply fails this candidate and
+ * the scheduler moves to the next provider.
+ */
 function getApiKey(env: Env, keyEnvName: string): string | undefined {
-  const map: Record<string, string | undefined> = {
-    GEMINI_API_KEY: env.GEMINI_API_KEY,
-    GROQ_API_KEY: env.GROQ_API_KEY,
-    OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
+  const name = String(keyEnvName || '').trim();
+  if (!/^[A-Z][A-Z0-9_]{2,63}$/.test(name)) return undefined;
+  const value = (env as unknown as Record<string, unknown>)[name];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * Sarvam wants its key twice: as a bearer token AND in `api-subscription-key`.
+ * Every other provider is plain OpenAI-compatible (`Authorization: Bearer`).
+ */
+function providerHeaders(provider: ProviderRow, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
   };
-  return map[keyEnvName];
+  if (provider.id === 'sarvam') {
+    headers['api-subscription-key'] = apiKey;
+  }
+  return headers;
 }
 
 export async function openProviderStream(opts: StreamOptions): Promise<ReadableStream<Uint8Array>> {
@@ -82,7 +103,7 @@ async function streamOpenAICompatible(
   signal: AbortSignal
 ): Promise<ReadableStream<Uint8Array>> {
   const url = `${opts.provider.base_url}/chat/completions`;
-  const body = {
+  const body: Record<string, unknown> = {
     model: opts.modelId,
     stream: true,
     messages: [
@@ -91,12 +112,17 @@ async function streamOpenAICompatible(
     ],
   };
 
+  // sarvam-105b reasons before it answers by default: the stream then carries
+  // `reasoning_content` and `content` stays null, so a chat would sit blank and
+  // then dump the whole answer at once. `reasoning_effort: null` turns thinking
+  // off (a level like "low" does not) and content streams token by token.
+  if (opts.provider.id === 'sarvam') {
+    body.reasoning_effort = null;
+  }
+
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: providerHeaders(opts.provider, apiKey),
     body: JSON.stringify(body),
     signal,
   });
